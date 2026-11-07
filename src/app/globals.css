@@ -1,26 +1,586 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════
+   Adesua Oriaifo — Design Tokens
+   Palette: Deep Plum · Warm Ivory · Champagne Gold
+            Dusty Mauve · Charcoal · Soft Blush
+   ═══════════════════════════════════════════════════════ */
+
+/* Tailwind v4 defaults `dark:` to prefers-color-scheme.
+   The site drives the theme with a `.dark` class on <html>, so the
+   variant has to be re-declared or every `dark:` utility is dead. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand bases — exact palette, never override with raw hex elsewhere */
+  --plum: #49283f;
+  --ivory: #f8f4ef;
+  --gold: #c99a72;
+  --mauve: #a9889d;
+  --charcoal: #302c30;
+  --blush: #f2e6e9;
+
+  /* Deep Plum scale */
+  --plum-50: #f7f2f5;
+  --plum-100: #eee5ea;
+  --plum-200: #dccbd6;
+  --plum-300: #c2a3b5;
+  --plum-400: #a37891;
+  --plum-500: #49283f;
+  --plum-600: #402338;
+  --plum-700: #371d30;
+  --plum-800: #2d1727;
+  --plum-900: #23111e;
+
+  /* Champagne Gold scale */
+  --gold-50: #fbf7f3;
+  --gold-100: #f6ede4;
+  --gold-200: #eddaca;
+  --gold-300: #e1c3a9;
+  --gold-400: #d4ad8b;
+  --gold-500: #c99a72;
+  --gold-600: #b07f55;
+  --gold-700: #8f6544;
+  --gold-800: #6e4d35;
+  --gold-900: #4e3727;
+
+  /* Dusty Mauve scale */
+  --mauve-50: #f8f4f6;
+  --mauve-100: #f0e8ed;
+  --mauve-200: #e0d1da;
+  --mauve-300: #cbb2c0;
+  --mauve-400: #b79aab;
+  --mauve-500: #a9889d;
+  --mauve-600: #917186;
+  --mauve-700: #765a6c;
+  --mauve-800: #5c4655;
+  --mauve-900: #44333e;
+
+  /* Charcoal scale (ink) */
+  --charcoal-50: #f6f5f6;
+  --charcoal-100: #ebe9eb;
+  --charcoal-200: #d5d2d5;
+  --charcoal-300: #b0acb0;
+  --charcoal-400: #858085;
+  --charcoal-500: #5a555a;
+  --charcoal-600: #454145;
+  --charcoal-700: #3a363a;
+  --charcoal-800: #302c30;
+  --charcoal-900: #1f1c1f;
+
+  /* Soft Blush scale */
+  --blush-50: #fdfafb;
+  --blush-100: #faf4f6;
+  --blush-200: #f7edf0;
+  --blush-300: #f2e6e9;
+  --blush-400: #ebd7dd;
+  --blush-500: #e2c4cd;
+  --blush-600: #d3a8b5;
+  --blush-700: #b98697;
+  --blush-800: #96677a;
+  --blush-900: #744d5e;
+
+  /* Warm Ivory scale */
+  --ivory-50: #fdfcfa;
+  --ivory-100: #faf8f4;
+  --ivory-200: #f8f4ef;
+  --ivory-300: #f1ebe3;
+  --ivory-400: #e8dfd3;
+  --ivory-500: #ddd0c0;
+  --ivory-600: #c9b8a3;
+  --ivory-700: #a99781;
+  --ivory-800: #877660;
+  --ivory-900: #655746;
+
+  /* Semantic — light editorial theme */
+  --background: var(--ivory-200);
+  --foreground: var(--charcoal-800);
+  --card: #fffdfb;
+  --card-foreground: var(--charcoal-800);
+  --popover: #fffdfb;
+  --popover-foreground: var(--charcoal-800);
+  --primary: var(--plum-500);
+  --primary-foreground: var(--ivory-200);
+  --secondary: var(--blush-300);
+  --secondary-foreground: var(--plum-500);
+  --muted: var(--ivory-300);
+  --muted-foreground: var(--charcoal-500);
+  --accent: var(--gold-500);
+  --accent-foreground: var(--charcoal-800);
+  --destructive: #a33c3c;
+  --destructive-foreground: #fffdfb;
+  --border: color-mix(in srgb, var(--plum-500) 14%, transparent);
+  --input: color-mix(in srgb, var(--plum-500) 18%, transparent);
+  --ring: var(--gold-500);
+  --radius: 0.375rem;
+
+  /* ── Theme-invariant tokens ──────────────────────────
+     The "inverse band" (footer, CTA, dark sections) and any ink
+     that sits on gold must NOT flip with the theme, otherwise a
+     dark-mode band would get dark-on-dark text. */
+  --band: #49283f;
+  --band-2: #402338;
+  --band-3: #371d30;
+  --on-band: #f8f4ef;
+  --on-band-muted: color-mix(in srgb, #f8f4ef 78%, transparent);
+  --ink: #2b262b;
+}
+
+/* ── Dark theme ────────────────────────────────────────
+   Declared AFTER :root on purpose: both selectors are (0,1,0) and
+   <html> matches both, so source order decides the winner.
+   The brand scales are inverted here rather than patched per
+   component, which flips every existing `bg-ivory-200`,
+   `text-plum-500`, `text-charcoal-700` … utility automatically.
+   Surfaces that must stay dark use the invariant --band-* tokens. */
+.dark {
+  /* Warm Ivory — page + panel surfaces (inverted) */
+  --ivory-50: #141013;
+  --ivory-100: #191418;
+  --ivory-200: #1c161a;
+  --ivory-300: #241d22;
+  --ivory-400: #2e262c;
+  --ivory-500: #3a3138;
+  --ivory-600: #514750;
+  --ivory-700: #8b7d88;
+  --ivory-800: #c4b8c1;
+  --ivory-900: #ede6ea;
+
+  /* Soft Blush — secondary surface / accent backgrounds (inverted) */
+  --blush-50: #171114;
+  --blush-100: #1e1519;
+  --blush-200: #251a1f;
+  --blush-300: #2b1e24;
+  --blush-400: #38272f;
+  --blush-500: #4a3440;
+  --blush-600: #6b4d5c;
+  --blush-700: #8f6a7d;
+  --blush-800: #b692a3;
+  --blush-900: #dcc4d0;
+
+  /* Charcoal — body ink (inverted) */
+  --charcoal-50: #121011;
+  --charcoal-100: #1a171a;
+  --charcoal-200: #262126;
+  --charcoal-300: #3a343a;
+  --charcoal-400: #5a525a;
+  --charcoal-500: #8d8790;
+  --charcoal-600: #b3adb4;
+  --charcoal-700: #d3ced4;
+  --charcoal-800: #f0eae9;
+  --charcoal-900: #fbf7f6;
+
+  /* Dusty Mauve — tertiary accents (inverted) */
+  --mauve-50: #141114;
+  --mauve-100: #1d181c;
+  --mauve-200: #2a2229;
+  --mauve-300: #3d3039;
+  --mauve-400: #56434f;
+  --mauve-500: #7a6172;
+  --mauve-600: #9c8294;
+  --mauve-700: #bda4b5;
+  --mauve-800: #d8c4d0;
+  --mauve-900: #ecdde6;
+
+  /* Deep Plum — headings, primary ink, primary buttons (inverted)
+     so `text-plum-500` reads light on the dark page. */
+  --plum-50: #1a1216;
+  --plum-100: #22161c;
+  --plum-200: #33222c;
+  --plum-300: #c9adc0;
+  --plum-400: #b18fa5;
+  --plum-500: #e6cede;
+  --plum-600: #f0dcea;
+  --plum-700: #f7e8f2;
+  --plum-800: #fbf2f8;
+  --plum-900: #fdf8fb;
+
+  /* Champagne Gold — lifted slightly so it keeps its glow */
+  --gold-50: #231a14;
+  --gold-100: #2f221a;
+  --gold-200: #433024;
+  --gold-300: #e8cdb3;
+  --gold-400: #dcb896;
+  --gold-500: #d6a87e;
+  --gold-600: #e0b992;
+  --gold-700: #eccaa9;
+  --gold-800: #f4ddc6;
+  --gold-900: #faeedd;
+
+  /* Semantic — dark editorial theme */
+  --background: var(--ivory-200);
+  --foreground: var(--charcoal-800);
+  --card: #241d22;
+  --card-foreground: var(--charcoal-800);
+  --popover: #241d22;
+  --popover-foreground: var(--charcoal-800);
+  --primary: var(--plum-500);
+  --primary-foreground: var(--ivory-200);
+  --secondary: var(--blush-400);
+  --secondary-foreground: var(--plum-400);
+  --muted: var(--ivory-300);
+  --muted-foreground: var(--charcoal-600);
+  --accent: var(--gold-500);
+  --accent-foreground: var(--ivory-100);
+  --destructive: #d98a8a;
+  --destructive-foreground: #1c161a;
+  --border: color-mix(in srgb, var(--gold-500) 22%, transparent);
+  --input: color-mix(in srgb, var(--gold-500) 28%, transparent);
+  --ring: var(--gold-400);
+
+  /* Native form controls, scrollbars and carets follow the theme */
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Raw brand scales */
+  --color-plum-50: var(--plum-50);
+  --color-plum-100: var(--plum-100);
+  --color-plum-200: var(--plum-200);
+  --color-plum-300: var(--plum-300);
+  --color-plum-400: var(--plum-400);
+  --color-plum-500: var(--plum-500);
+  --color-plum-600: var(--plum-600);
+  --color-plum-700: var(--plum-700);
+  --color-plum-800: var(--plum-800);
+  --color-plum-900: var(--plum-900);
+
+  --color-gold-50: var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+  --color-gold-800: var(--gold-800);
+  --color-gold-900: var(--gold-900);
+
+  --color-mauve-50: var(--mauve-50);
+  --color-mauve-100: var(--mauve-100);
+  --color-mauve-200: var(--mauve-200);
+  --color-mauve-300: var(--mauve-300);
+  --color-mauve-400: var(--mauve-400);
+  --color-mauve-500: var(--mauve-500);
+  --color-mauve-600: var(--mauve-600);
+  --color-mauve-700: var(--mauve-700);
+  --color-mauve-800: var(--mauve-800);
+  --color-mauve-900: var(--mauve-900);
+
+  --color-charcoal-50: var(--charcoal-50);
+  --color-charcoal-100: var(--charcoal-100);
+  --color-charcoal-200: var(--charcoal-200);
+  --color-charcoal-300: var(--charcoal-300);
+  --color-charcoal-400: var(--charcoal-400);
+  --color-charcoal-500: var(--charcoal-500);
+  --color-charcoal-600: var(--charcoal-600);
+  --color-charcoal-700: var(--charcoal-700);
+  --color-charcoal-800: var(--charcoal-800);
+  --color-charcoal-900: var(--charcoal-900);
+
+  --color-blush-50: var(--blush-50);
+  --color-blush-100: var(--blush-100);
+  --color-blush-200: var(--blush-200);
+  --color-blush-300: var(--blush-300);
+  --color-blush-400: var(--blush-400);
+  --color-blush-500: var(--blush-500);
+  --color-blush-600: var(--blush-600);
+  --color-blush-700: var(--blush-700);
+  --color-blush-800: var(--blush-800);
+  --color-blush-900: var(--blush-900);
+
+  --color-ivory-50: var(--ivory-50);
+  --color-ivory-100: var(--ivory-100);
+  --color-ivory-200: var(--ivory-200);
+  --color-ivory-300: var(--ivory-300);
+  --color-ivory-400: var(--ivory-400);
+  --color-ivory-500: var(--ivory-500);
+  --color-ivory-600: var(--ivory-600);
+  --color-ivory-700: var(--ivory-700);
+  --color-ivory-800: var(--ivory-800);
+  --color-ivory-900: var(--ivory-900);
+
+  /* Named brand aliases */
+  --color-plum: var(--plum);
+  --color-ivory: var(--ivory);
+  --color-gold: var(--gold);
+  --color-mauve: var(--mauve);
+  --color-charcoal: var(--charcoal);
+  --color-blush: var(--blush);
+
+  /* Theme-invariant roles */
+  --color-band: var(--band);
+  --color-band-2: var(--band-2);
+  --color-band-3: var(--band-3);
+  --color-on-band: var(--on-band);
+  --color-on-band-muted: var(--on-band-muted);
+  --color-ink: var(--ink);
+
+  /* Typography */
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-manrope), "Manrope", system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 16px);
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ─────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  /* Nothing on this site is meant to scroll sideways. `clip` (not
+     `hidden`) keeps it from creating a scroll container, so sticky
+     and fixed elements keep working. */
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* ── Typography roles ─────────────────────────────── */
+@layer components {
+  .text-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  .text-h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .text-h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+
+  .text-h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.375rem, 2vw, 1.75rem);
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .text-lead {
+    font-family: var(--font-sans);
+    font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+    line-height: 1.7;
+    color: var(--muted-foreground);
+  }
+
+  .text-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-600);
+  }
+
+  .text-caption {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--muted-foreground);
+  }
+
+  /* Restrained script accent — signature voice */
+  .text-signature {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  .text-body-editorial p {
+    line-height: 1.75;
+  }
+}
+
+/* ── Utilities ────────────────────────────────────── */
+@utility container-site {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility section-y {
+  padding-block: 4rem;
+  @media (width >= 48rem) {
+    padding-block: 6rem;
+  }
+}
+
+/* ── Motion (design system) ─────────────────────── */
+@utility abf-fade-up {
+  animation: adesua-fade-up 0.7s var(--ease-out-expo) both;
+}
+
+@utility abf-delay-1 {
+  animation-delay: 0.1s;
+}
+@utility abf-delay-2 {
+  animation-delay: 0.22s;
+}
+@utility abf-delay-3 {
+  animation-delay: 0.34s;
+}
+@utility abf-delay-4 {
+  animation-delay: 0.46s;
+}
+
+@keyframes adesua-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility abf-float {
+  animation: adesua-float 9s ease-in-out infinite;
+}
+
+@keyframes adesua-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.04);
+  }
+}
+
+@utility abf-marquee {
+  animation: adesua-marquee 32s linear infinite;
+}
+
+@keyframes adesua-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility abf-ripple {
+  position: absolute;
+  border-radius: 9999px;
+  background: color-mix(in srgb, white 45%, transparent);
+  pointer-events: none;
+  transform: scale(0);
+  animation: adesua-ripple 0.65s ease-out forwards;
+}
+
+@keyframes adesua-ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* abf-shine is defined inline in the Button component */
+
+@utility abf-bob {
+  animation: adesua-bob 1.8s ease-in-out infinite;
+}
+
+@keyframes adesua-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+@utility section-band {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Focus & selection ────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold-500) 35%, transparent);
+  color: var(--charcoal-800);
+}
+
+.dark ::selection {
+  background: color-mix(in srgb, var(--gold-500) 45%, transparent);
+  color: #f8f4ef;
+}
+
+/* ── Reduced motion ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
