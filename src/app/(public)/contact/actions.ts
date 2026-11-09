@@ -1,19 +1,26 @@
 "use server";
 
-import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { z } from "zod";
-import { siteConfig } from "@/config/site";
-import { sendEnquiryEmail } from "@/lib/email/mailer";
+import { sendAutoReply, sendEnquiryEmail, sendOwnerAlert } from "@/lib/email/send";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { draftEmailReply } from "@/lib/zee/assistant";
+import { siteConfig } from "@/config/site";
 
 export interface EnquiryState {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Record<string, string>;
-  /** Always returned so the visitor has a route that cannot fail. */
-  mailto?: string;
+  /** Values echoed back so a failed submit never loses what was typed. */
+  values?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    category?: string;
+    subject?: string;
+    message?: string;
+  };
+  reference?: string;
 }
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -27,7 +34,9 @@ const EnquirySchema = z.object({
     .max(320)
     .regex(EMAIL_PATTERN, "That email address does not look right."),
   phone: z.string().trim().max(40).optional(),
-  category: z.enum(["coaching", "consulting", "speaking", "writing", "other"]),
+  category: z.enum(["coaching", "consulting", "speaking", "writing", "other"], {
+    message: "Please choose what brings you here.",
+  }),
   subject: z.string().trim().max(200).optional(),
   message: z
     .string()
@@ -38,28 +47,10 @@ const EnquirySchema = z.object({
   source: z.string().trim().max(40).optional(),
 });
 
-/** Builds a mailto link so there is always a way through, even if the server fails. */
-export function buildMailto(input: {
-  name?: string;
-  email?: string;
-  category?: string;
-  message?: string;
-}): string {
-  const subject = encodeURIComponent(
-    `${input.category ? `[${input.category}] ` : ""}Enquiry from ${input.name || "the website"}`,
-  );
-  const body = encodeURIComponent(
-    [
-      input.message || "",
-      "",
-      "—",
-      input.name ? `From: ${input.name}` : "",
-      input.email ? `Reply to: ${input.email}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
-  return `mailto:${siteConfig.links.email}?subject=${subject}&body=${body}`;
+function isOutsideWorkingHours(date = new Date()): boolean {
+  const day = date.getDay();
+  const hour = date.getHours();
+  return day === 0 || day === 6 || hour < 9 || hour >= 17;
 }
 
 export async function submitEnquiry(
@@ -77,12 +68,18 @@ export async function submitEnquiry(
     source: String(formData.get("source") ?? "") || "contact-form",
   };
 
-  const mailto = buildMailto(raw);
+  const values = {
+    name: raw.name,
+    email: raw.email,
+    phone: raw.phone ?? "",
+    category: raw.category,
+    subject: raw.subject ?? "",
+    message: raw.message,
+  };
 
-  // Honeypot: a real person never fills a field they cannot see.
+  // Honeypot: bots fill the hidden field, humans never see it.
   if (String(formData.get("company") ?? "").length > 0) {
-    // Pretend it worked so the bot does not learn anything.
-    return { status: "success", message: "Thank you — your message is on its way.", mailto };
+    return { status: "success", message: "Thank you — your message is on its way." };
   }
 
   const parsed = EnquirySchema.safeParse(raw);
@@ -96,91 +93,104 @@ export async function submitEnquiry(
       status: "error",
       message: "Please check the highlighted fields.",
       fieldErrors,
-      mailto,
+      values,
     };
   }
 
   const data = parsed.data;
-
-  // ── 1. Store it. Best-effort: email is the delivery route she actually reads.
+  let enquiryId: string | null = null;
   let stored = false;
+
   try {
     const supabase = createAdminClient();
-    const { error } = await supabase.from("enquiries").insert({
-      name: data.name,
-      email: data.email,
-      phone: data.phone || null,
-      subject: data.subject || null,
-      category: data.category,
-      message: data.message,
-      pathway: data.pathway || null,
-      source: data.source || "contact-form",
-    });
+    const { data: inserted, error } = await supabase
+      .from("enquiries")
+      .insert({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        subject: data.subject || null,
+        category: data.category,
+        message: data.message,
+        pathway: data.pathway || null,
+        source: data.source || "contact-form",
+        status: "new",
+      })
+      .select("id")
+      .single();
+
     if (error) console.error("[enquiry] store failed", error.message);
-    else stored = true;
+    else {
+      stored = true;
+      enquiryId = inserted?.id ?? null;
+    }
   } catch (error) {
     console.error("[enquiry] store unavailable", error);
   }
 
-  // ── 2. Deliver it to her inbox, with the visitor as Reply-To.
-  const mail = await sendEnquiryEmail({
+  const outsideHours = isOutsideWorkingHours();
+
+  // Zee writes the acknowledgement in Adesua's voice, grounded in her own
+  // record. It falls back to a hand-written template if every model is down,
+  // so an enquiry is never left unanswered.
+  const [mail, draft] = await Promise.all([
+    sendEnquiryEmail({
+      name: data.name,
+      email: data.email,
+      phone: data.phone || null,
+      category: data.category,
+      subject: data.subject || null,
+      message: data.message,
+      pathway: data.pathway || null,
+      source: data.source || "contact-form",
+    }),
+    draftEmailReply({
+      name: data.name,
+      email: data.email,
+      subject: data.subject || null,
+      message: data.message,
+      category: data.category,
+      kind: "acknowledgement",
+    }),
+  ]);
+
+  const autoReply = await sendAutoReply({
     name: data.name,
     email: data.email,
-    phone: data.phone || null,
-    category: data.category,
-    subject: data.subject || null,
     message: data.message,
-    pathway: data.pathway || null,
-    source: data.source || "contact-form",
+    reply: draft.body,
+    outsideHours,
   });
-
-  if (stored && mail.sent) {
-    revalidatePath("/admin/enquiries");
-    return {
-      status: "success",
-      message: `Thank you, ${data.name.split(" ")[0]}. Your message is with Adesua — she replies within one working day.`,
-      mailto,
-    };
-  }
 
   if (stored) {
     revalidatePath("/admin/enquiries");
-    return {
-      status: "success",
-      message:
-        "Thank you — your message has been saved and will be answered within one working day.",
-      mailto,
-    };
+    await sendOwnerAlert({
+      title: `New ${data.category} enquiry`,
+      body: `${data.name} (${data.email}) wrote: "${data.message.slice(0, 140)}"`,
+      link: enquiryId ? `/admin/enquiries/${enquiryId}` : "/admin/enquiries",
+      quiet: mail.sent,
+    });
   }
 
-  if (mail.sent) {
+  if (stored || mail.sent) {
+    const firstName = data.name.split(" ")[0];
+    const acknowledgement = autoReply.sent
+      ? `A confirmation is on its way to ${data.email}.`
+      : "";
+    const timing = outsideHours
+      ? "It arrived outside working hours, so I will reply on the next working day."
+      : "I reply within one working day.";
+
     return {
       status: "success",
-      message: `Thank you, ${data.name.split(" ")[0]}. Your message is with Adesua — she replies within one working day.`,
-      mailto,
+      message: `Thank you, ${firstName}. Your message is with me — ${timing} ${acknowledgement}`.trim(),
+      reference: enquiryId ?? undefined,
     };
   }
 
   return {
     status: "error",
-    message:
-      "I could not deliver that just now. Please use the direct email link below — nothing is lost.",
-    mailto,
+    message: `I could not deliver that just now. Please write to ${siteConfig.links.email} directly — nothing is lost.`,
+    values,
   };
-}
-
-/** Fingerprint used for debouncing repeat submissions without storing raw IPs. */
-export async function hashRequestOrigin(): Promise<string | null> {
-  try {
-    const headerList = await headers();
-    const ip =
-      headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      headerList.get("x-real-ip") ||
-      null;
-    const agent = headerList.get("user-agent") || "";
-    if (!ip) return null;
-    return createHash("sha256").update(`${ip}:${agent}`).digest("hex").slice(0, 32);
-  } catch {
-    return null;
-  }
 }

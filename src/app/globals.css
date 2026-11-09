@@ -124,6 +124,20 @@
   --on-band: #f8f4ef;
   --on-band-muted: color-mix(in srgb, #f8f4ef 78%, transparent);
   --ink: #2b262b;
+
+  /* ── Admin sidebar ───────────────────────────────────
+     Unlike the band tokens above, these DO flip with the theme.
+     In light mode the rail is the brand plum, so it reads as a
+     deliberate dark column beside the ivory content. In dark mode
+     it drops below the page surface instead, so it recedes rather
+     than competing with the content it frames. */
+  --sidebar: #49283f;
+  --sidebar-2: #402338;
+  --sidebar-3: #371d30;
+  --sidebar-foreground: #f8f4ef;
+  --sidebar-muted: color-mix(in srgb, #f8f4ef 62%, transparent);
+  --sidebar-line: color-mix(in srgb, #f8f4ef 12%, transparent);
+  --sidebar-accent: #e1c3a9;
 }
 
 /* ── Dark theme ────────────────────────────────────────
@@ -227,6 +241,16 @@
   --border: color-mix(in srgb, var(--gold-500) 22%, transparent);
   --input: color-mix(in srgb, var(--gold-500) 28%, transparent);
   --ring: var(--gold-400);
+
+  /* Admin sidebar — sits below the page surface so it recedes, with the
+     gold accent carrying the active state instead of a lighter fill. */
+  --sidebar: #1a1216;
+  --sidebar-2: #171014;
+  --sidebar-3: #140e12;
+  --sidebar-foreground: #ede6ea;
+  --sidebar-muted: color-mix(in srgb, #ede6ea 58%, transparent);
+  --sidebar-line: color-mix(in srgb, #d6a87e 16%, transparent);
+  --sidebar-accent: #e8cdb3;
 
   /* Native form controls, scrollbars and carets follow the theme */
   color-scheme: dark;
@@ -335,6 +359,15 @@
   --color-on-band: var(--on-band);
   --color-on-band-muted: var(--on-band-muted);
   --color-ink: var(--ink);
+
+  /* Admin sidebar — theme-responsive, unlike the band tokens */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-2: var(--sidebar-2);
+  --color-sidebar-3: var(--sidebar-3);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-line: var(--sidebar-line);
+  --color-sidebar-accent: var(--sidebar-accent);
 
   /* Typography */
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -583,4 +616,85 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── Article body (rendered Markdown) ─────────────── */
+.article-body > * + * {
+  margin-top: 1.35em;
+}
+
+.article-body h2,
+.article-body h3,
+.article-body h4,
+.article-body h5 {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--plum-500);
+  margin-top: 2.2em;
+  margin-bottom: 0.6em;
+}
+
+.article-body h2 { font-size: 1.9rem; }
+.article-body h3 { font-size: 1.5rem; }
+.article-body h4 { font-size: 1.25rem; }
+
+.article-body p {
+  margin: 0;
+}
+
+.article-body a {
+  color: var(--gold-700);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--gold-500) 60%, transparent);
+  text-underline-offset: 4px;
+}
+
+.article-body a:hover {
+  color: var(--plum-600);
+}
+
+.article-body strong { font-weight: 600; color: var(--charcoal-800); }
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li::marker { color: var(--gold-600); }
+
+.article-body blockquote {
+  border-left: 3px solid var(--gold-500);
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 1.35rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--plum-500);
+}
+
+.article-body hr {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 2.5rem 0;
+}
+
+.article-body pre {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background: var(--ivory-300);
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.article-body img {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
 }

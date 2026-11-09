@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,6 +43,8 @@ next-env.d.ts
 
 # Local tooling / session state
 .claude/
+supabase/.temp/
 
 # Mailer debug output
 .email-dump.txt
+.tmp-email.html

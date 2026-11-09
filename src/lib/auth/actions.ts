@@ -1,11 +1,18 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminSession } from "@/lib/auth/session";
 import { loginSchema, setupOwnerSchema } from "@/lib/validation/auth";
+import {
+  sendInvitationAcceptedEmail,
+  sendSignInAlertEmail,
+  sendWelcomeEmail,
+} from "@/lib/email/send";
+import { ROLE_LABELS } from "@/lib/auth/roles";
 
 export interface AuthState {
   status: "idle" | "error";
@@ -58,6 +65,23 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     await supabase.auth.signOut();
     redirect("/auth/login?denied=1");
   }
+
+  // A sign-in notice is a courtesy, never a gate — a mail outage must not
+  // block someone who has already authenticated.
+  const signedInAt = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Africa/Lagos",
+  }).format(new Date());
+
+  const userAgent = (await headers()).get("user-agent");
+
+  await sendSignInAlertEmail({
+    name: session.profile.full_name ?? "",
+    email: session.user.email ?? "",
+    signedInAt,
+    userAgent,
+  }).catch((mailError) => console.error("[auth] sign-in notice failed", mailError));
 
   redirect(safeNext(formData.get("next")));
 }
@@ -145,10 +169,170 @@ export async function setupOwner(_prev: AuthState, formData: FormData): Promise<
     return { status: "error", message: profileError.message };
   }
 
+  // The account exists from here on, so the welcome email must not be able to
+  // fail the signup — a mail outage should never strand a created owner.
+  await sendWelcomeEmail({
+    name: parsed.data.fullName,
+    email: parsed.data.email,
+    role: ROLE_LABELS.owner,
+    signInUrl: `${siteBaseUrl()}/auth/login`,
+    isOwner: true,
+  }).catch((error) => console.error("[auth] welcome email failed", error));
+
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
+  });
+
+  if (signInError) redirect("/auth/login");
+
+  redirect("/admin");
+}
+
+function siteBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+}
+
+async function hashToken(token: string): Promise<string> {
+  const data = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export interface InvitationLookup {
+  email: string;
+  role: keyof typeof ROLE_LABELS;
+  expiresAt: string;
+  invitedBy: string | null;
+}
+
+/**
+ * Resolves an invitation token for the accept screen. Returns null for a
+ * token that is unknown, already used or expired — the page then shows the
+ * same "this link is no longer valid" state for all three.
+ */
+export async function lookupInvitation(token: string): Promise<InvitationLookup | null> {
+  if (!token || !process.env.SUPABASE_SECRET_KEY) return null;
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("admin_invitations")
+    .select("email, role, expires_at, accepted_at, invited_by")
+    .eq("token_hash", await hashToken(token))
+    .maybeSingle();
+
+  if (!data || data.accepted_at) return null;
+  if (new Date(data.expires_at).getTime() < Date.now()) return null;
+
+  let invitedBy: string | null = null;
+  if (data.invited_by) {
+    const { data: inviter } = await admin
+      .from("admin_profiles")
+      .select("full_name, email")
+      .eq("id", data.invited_by)
+      .maybeSingle();
+    invitedBy = inviter?.full_name || inviter?.email || null;
+  }
+
+  return {
+    email: data.email,
+    role: data.role as keyof typeof ROLE_LABELS,
+    expiresAt: data.expires_at,
+    invitedBy,
+  };
+}
+
+/**
+ * Accepts an invitation: creates the auth user, writes the admin profile with
+ * the invited role, marks the invitation used, signs in and sends the welcome
+ * email. The email address always comes from the invitation, never the form.
+ */
+export async function acceptInvitation(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const token = String(formData.get("token") ?? "");
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!token) return { status: "error", message: "This invitation link is incomplete." };
+  if (fullName.length < 2) {
+    return { status: "error", fieldErrors: { fullName: "Enter your full name." } };
+  }
+  if (password.length < 12) {
+    return {
+      status: "error",
+      fieldErrors: { password: "Use at least 12 characters." },
+    };
+  }
+  if (!process.env.SUPABASE_SECRET_KEY) {
+    return { status: "error", message: "Invitations need SUPABASE_SECRET_KEY on this deployment." };
+  }
+
+  const invitation = await lookupInvitation(token);
+  if (!invitation) {
+    return {
+      status: "error",
+      message: "This invitation has expired or has already been used. Ask for a fresh one.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: invitation.email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+
+  if (createError || !created.user) {
+    return {
+      status: "error",
+      message:
+        createError?.message ??
+        "That address may already have an account. Try signing in instead.",
+    };
+  }
+
+  const { error: profileError } = await admin.from("admin_profiles").insert({
+    id: created.user.id,
+    email: invitation.email,
+    full_name: fullName,
+    role: invitation.role,
+    status: "active",
+  });
+
+  if (profileError) {
+    await admin.auth.admin.deleteUser(created.user.id);
+    return { status: "error", message: profileError.message };
+  }
+
+  await admin
+    .from("admin_invitations")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("token_hash", await hashToken(token));
+
+  await Promise.allSettled([
+    sendWelcomeEmail({
+      name: fullName,
+      email: invitation.email,
+      role: ROLE_LABELS[invitation.role],
+      signInUrl: `${siteBaseUrl()}/auth/login`,
+    }),
+    sendInvitationAcceptedEmail({
+      name: fullName,
+      email: invitation.email,
+      role: ROLE_LABELS[invitation.role],
+    }),
+  ]);
+
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: invitation.email,
+    password,
   });
 
   if (signInError) redirect("/auth/login");

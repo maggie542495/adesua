@@ -23,10 +23,25 @@ export default async function NewRecordPage({ params }: PageProps) {
 
   await requireAdmin(def.writeRole ?? "editor");
 
-  // A row already in the table tells us the real column types (boolean,
-  // timestamps, long text). Only an empty table falls back to the registry.
+  /**
+   * Order of preference for a create form:
+   *
+   * 1. The registry's declared fields. They carry the things a row cannot tell
+   *    us — the choices behind a `select`, the help text, the reading order —
+   *    and this page used to ignore them, so creating an article offered every
+   *    column as free text and no status choices at all.
+   * 2. A live row, for simple tables that never declared anything.
+   * 3. The registry's column list, when the table is empty.
+   *
+   * Read-only and update-only fields are dropped: a create form has no
+   * timestamps to show and nothing to preserve.
+   */
   const { rows } = await listRows(def, { page: 1 });
-  const fields = rows.length ? deriveFields(rows[0]) : fallbackFields(def.columns);
+  const fields = def.fields
+    ? def.fields.filter((field) => !field.readOnly && !field.updateOnly)
+    : rows.length
+      ? deriveFields(rows[0]).filter((field) => !field.readOnly)
+      : fallbackFields(def.columns).filter((field) => !field.readOnly);
 
   const listPath = `/admin/${def.table}`;
 

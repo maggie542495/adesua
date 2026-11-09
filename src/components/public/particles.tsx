@@ -20,16 +20,17 @@ export function Particles() {
     }
 
     function initParticles() {
-      const particleCount = Math.min(40, Math.floor((canvasEl.width * canvasEl.height) / 35000));
+      // Increased particle count for better visibility
+      const particleCount = Math.min(60, Math.floor((canvasEl.width * canvasEl.height) / 25000));
       particles = [];
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * canvasEl.width,
           y: Math.random() * canvasEl.height,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          r: Math.random() * 2 + 1,
-          alpha: Math.random() * 0.4 + 0.1,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          r: Math.random() * 3 + 1,
+          alpha: Math.random() * 0.6 + 0.2,
         });
       }
     }
@@ -37,37 +38,42 @@ export function Particles() {
     function animate() {
       ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-      const color = isDark ? "201, 154, 114" : "73, 40, 63";
+      // Enhanced colors for better visibility in both themes
+      const color = isDark ? "255, 255, 255" : "73, 40, 63";
 
       particles.forEach((p, i) => {
         p.x += p.vx;
         p.y += p.vy;
 
-        if (p.x < 0) p.x = canvasEl.width;
-        if (p.x > canvasEl.width) p.x = 0;
-        if (p.y < 0) p.y = canvasEl.height;
-        if (p.y > canvasEl.height) p.y = 0;
+        // Bounce off edges instead of wrapping
+        if (p.x < 0 || p.x > canvasEl.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvasEl.height) p.vy *= -1;
 
+        // Draw connections between nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 150) {
+          if (dist < 180) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(${color}, ${0.15 * (1 - dist / 150)})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `rgba(${color}, ${0.2 * (1 - dist / 180)})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
 
+        // Draw particle with glow effect
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${color}, ${p.alpha})`;
+        ctx.shadowColor = `rgba(${color}, ${p.alpha})`;
+        ctx.shadowBlur = 10;
         ctx.fill();
+        ctx.shadowBlur = 0;
       });
 
       animationId = requestAnimationFrame(animate);

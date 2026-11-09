@@ -75,7 +75,7 @@ export default async function WorkWithMePage() {
                 href="/about"
                 className="inline-flex items-center gap-2 rounded-md border border-plum-500/35 px-6 py-3 text-sm font-semibold text-plum-500 transition hover:border-plum-500 hover:bg-plum-500 hover:text-ivory-200"
               >
-                About Adesua
+                About me
               </Link>
             </div>
           </Reveal>
@@ -359,7 +359,7 @@ export default async function WorkWithMePage() {
                 content: (
                   <p className="text-sm leading-relaxed">
                     Most advisory and coaching is conducted remotely. Workshops
-                    can be delivered in-person or virtual, depending on the
+                    are delivered in-person or virtual, depending on the
                     brief.
                   </p>
                 ),
@@ -374,7 +374,7 @@ export default async function WorkWithMePage() {
         title="Ready to begin?"
         description="Tell me what you are working on. A short note is enough to start."
         primary={{ label: "Get in touch", href: "/contact" }}
-        secondary={{ label: "About Adesua", href: "/about" }}
+        secondary={{ label: "About me", href: "/about" }}
       />
     </>
   );

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,12 +42,12 @@ export function CTABanner({ title, description, primary, secondary }: CTABannerP
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
           <Magnetic className="block sm:inline-block">
             <Button
-              asChild
               size="lg"
               variant="onDark"
               className="abf-shine h-12 w-full px-8 sm:w-auto"
+              asChild
             >
-              <Link href={primary.href}>
+              <Link href={primary.href} className="flex items-center gap-2">
                 {primary.label}
                 <ArrowRight className="transition-transform duration-300 group-hover/btn:translate-x-1" />
               </Link>
@@ -53,10 +55,10 @@ export function CTABanner({ title, description, primary, secondary }: CTABannerP
           </Magnetic>
           {secondary && (
             <Button
-              asChild
               size="lg"
               variant="outlineOnDark"
               className="h-12 w-full px-8 sm:w-auto"
+              asChild
             >
               <Link href={secondary.href}>{secondary.label}</Link>
             </Button>

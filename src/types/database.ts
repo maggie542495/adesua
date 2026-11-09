@@ -5,7 +5,27 @@ export type Database = {
   
   "public": {
           Tables: {
-            "admin_invitations": {
+            "gallery_items": {
+                  Row: {
+                    "alt_text": string | null,"category": string,"created_at": string,"description": string | null,"id": string,"image_path": string,"is_featured": boolean,"sort_order": number,"status": string,"title": string,"updated_at": string,"uploaded_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alt_text"?: string | null,"category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"image_path": string,"is_featured"?: boolean,"sort_order"?: number,"status"?: string,"title": string,"updated_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Update: {
+                    "alt_text"?: string | null,"category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"image_path"?: string,"is_featured"?: boolean,"sort_order"?: number,"status"?: string,"title"?: string,"updated_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "gallery_items_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "admin_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"admin_invitations": {
                   Row: {
                     "accepted_at": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"role": Database["public"]['Enums']["admin_role"],"token_hash": string
                   }

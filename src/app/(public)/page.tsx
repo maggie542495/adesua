@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Briefcase,
-  Compass,
   GraduationCap,
   HeartHandshake,
   Lightbulb,
@@ -15,17 +14,22 @@ import {
 import { siteConfig, pathways } from "@/config/site";
 import { getHomepageContent } from "@/repositories/homepage-repository";
 import { getPublishedArticles } from "@/repositories/article-repository";
+import { getGalleryItems } from "@/repositories/gallery-repository";
 import { resolveImageUrl } from "@/lib/media/resolve-image";
 import { Hero } from "@/components/public/hero";
 import { Marquee } from "@/components/public/marquee";
+import { MetricsBand } from "@/components/public/metrics-band";
 import { Section, SectionHeading } from "@/components/public/section";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/public/reveal";
-import { FeatureCard } from "@/components/public/feature-card";
 import { CTABanner } from "@/components/public/cta-banner";
 import { Badge } from "@/components/ui/badge";
+import { SpotlightCard } from "@/components/public/spotlight-card";
+import { ScrollStory } from "@/components/public/scroll-story";
+import { InteractivePathways } from "@/components/public/interactive-pathways";
+import { QuoteRotator } from "@/components/public/quote-rotator";
+import { featuredRecommendations, recommendations } from "@/content/recommendations";
 
 export const metadata: Metadata = {
-  // The root layout template appends `— Adesua Oriaifo`; absolute avoids a doubled name.
   title: { absolute: `${siteConfig.tagline} — ${siteConfig.name}` },
   description: siteConfig.description,
   alternates: { canonical: "/" },
@@ -96,38 +100,39 @@ function firstString(...values: unknown[]): string | null {
 }
 
 export default async function HomePage() {
-  const [homepage, articles] = await Promise.all([
+  const [homepage, articles, gallery] = await Promise.all([
     getHomepageContent(),
     getPublishedArticles(3),
+    getGalleryItems(),
   ]);
 
   const heroImage =
-    resolveImageUrl(
-      firstString(homepage?.featured_image_path, DEFAULT_IMAGE)
-    ) ?? DEFAULT_IMAGE;
+    resolveImageUrl(firstString(homepage?.featured_image_path, DEFAULT_IMAGE)) ?? DEFAULT_IMAGE;
 
-  const pathway = [
+  const panels = [
     {
       ...pathways.personalGrowth,
       href: "/work-with-me#personal-growth",
-      icon: Compass,
-      tint: "from-blush-200 via-blush-100 to-ivory-100",
+      eyebrow: "Pathway one",
+      image: "/brand/portrait-green-dress-portrait.jpg",
+      topics: topicList(pathways.personalGrowth.summary),
     },
     {
       ...pathways.professionalImpact,
       href: "/work-with-me#professional-impact",
-      icon: Briefcase,
-      tint: "from-gold-100 via-ivory-100 to-blush-100",
+      eyebrow: "Pathway two",
+      image: "/brand/portrait-black-blazer.jpg",
+      topics: topicList(pathways.professionalImpact.summary),
     },
-  ] as const;
+  ];
+
+  const galleryPreview = gallery.slice(0, 4);
 
   return (
     <>
       <Hero
         eyebrow={firstString(homepage?.hero_eyebrow) ?? siteConfig.tagline}
-        headline={
-          firstString(homepage?.hero_headline) ?? siteConfig.philosophy
-        }
+        headline={firstString(homepage?.hero_headline) ?? siteConfig.philosophy}
         subheadline={
           firstString(homepage?.hero_subheadline) ??
           "Customer Experience & Client Success Leader · Coach · Facilitator"
@@ -138,7 +143,7 @@ export default async function HomePage() {
           href: firstString(homepage?.hero_cta_primary_href) ?? "/work-with-me",
         }}
         secondary={{
-          label: firstString(homepage?.hero_cta_secondary_label) ?? "About Adesua",
+          label: firstString(homepage?.hero_cta_secondary_label) ?? "About me",
           href: firstString(homepage?.hero_cta_secondary_href) ?? "/about",
         }}
         image={heroImage}
@@ -147,7 +152,14 @@ export default async function HomePage() {
 
       <Marquee items={marqueeItems} />
 
-      {/* ── Positioning ── */}
+      <MetricsBand metrics={siteConfig.metrics} />
+
+      {/* Scroll-inked statement */}
+      <Section tone="muted">
+        <ScrollStory text={siteConfig.philosophy} signature={siteConfig.signature} />
+      </Section>
+
+      {/* Positioning */}
       <Section>
         <div className="grid items-start gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
           <Reveal>
@@ -174,7 +186,7 @@ export default async function HomePage() {
           </Reveal>
 
           <Reveal delay={0.12}>
-            <aside className="rounded-2xl border border-border bg-card p-7 shadow-sm">
+            <SpotlightCard className="p-7">
               <h3 className="font-display text-2xl font-medium text-plum-500">
                 Operating principles
               </h3>
@@ -191,62 +203,24 @@ export default async function HomePage() {
               <p className="mt-6 border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">
                 {siteConfig.description}
               </p>
-            </aside>
+            </SpotlightCard>
           </Reveal>
         </div>
       </Section>
 
-      {/* ── Two pathways ── */}
+      {/* Two pathways — interactive panels */}
       <Section tone="muted">
         <SectionHeading
           eyebrow="Pathways"
           title="Two ways to work together"
           description="Personal growth and professional impact are separate entry points, but they meet in the same place: people doing better work for longer."
         />
-
-        <StaggerGroup className="grid gap-6 lg:grid-cols-2" stagger={0.14}>
-          {pathway.map((pathway) => {
-            const Icon = pathway.icon;
-            return (
-              <StaggerItem key={pathway.slug}>
-                <Link
-                  href={pathway.href}
-                  className={`group flex h-full flex-col rounded-2xl border border-border bg-gradient-to-br ${pathway.tint} p-8 transition-all duration-500 hover:-translate-y-1.5 hover:border-gold-300 hover:shadow-xl hover:shadow-plum-700/12`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="flex size-14 items-center justify-center rounded-2xl bg-plum-500 text-ivory-200 shadow-lg shadow-plum-500/30 transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110">
-                      <Icon className="size-6" aria-hidden />
-                    </span>
-                    <ArrowUpRight
-                      className="size-6 text-gold-600 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
-                      aria-hidden
-                    />
-                  </div>
-                  <h3 className="mt-6 font-display text-3xl font-medium text-plum-500">
-                    {pathway.title}
-                  </h3>
-                  <p className="mt-3 text-[0.975rem] leading-relaxed text-charcoal-700">
-                    {pathway.summary}
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {topicList(pathway.summary).map((topic) => (
-                      <Badge key={topic} variant="soft">
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
-                  <span className="mt-auto inline-flex items-center gap-2 pt-7 text-sm font-semibold text-plum-500 transition-colors group-hover:text-gold-700">
-                    Explore this pathway
-                    <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </span>
-                </Link>
-              </StaggerItem>
-            );
-          })}
-        </StaggerGroup>
+        <Reveal>
+          <InteractivePathways panels={panels} />
+        </Reveal>
       </Section>
 
-      {/* ── What I do ── */}
+      {/* What I do */}
       <Section>
         <SectionHeading
           eyebrow="Capabilities"
@@ -254,20 +228,76 @@ export default async function HomePage() {
           description="Advisory, facilitation and coaching work — delivered as focused engagements, not open-ended retainers."
         />
         <StaggerGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
-          {services.map((service) => (
-            <StaggerItem key={service.title}>
-              <FeatureCard
-                icon={service.icon}
-                title={service.title}
-                description={service.description}
-                className="h-full"
-              />
-            </StaggerItem>
-          ))}
+          {services.map((service) => {
+            const Icon = service.icon;
+            return (
+              <StaggerItem key={service.title}>
+                <SpotlightCard className="h-full p-6">
+                  <span className="flex size-12 items-center justify-center rounded-xl bg-blush-300 text-plum-500 transition-transform duration-500 group-hover/spot:-rotate-6 group-hover/spot:scale-110">
+                    <Icon className="size-5" aria-hidden />
+                  </span>
+                  <h3 className="mt-5 font-display text-xl font-medium text-plum-500">
+                    {service.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {service.description}
+                  </p>
+                </SpotlightCard>
+              </StaggerItem>
+            );
+          })}
         </StaggerGroup>
       </Section>
 
-      {/* ── Philosophy band ── */}
+      {/* Gallery teaser */}
+      {galleryPreview.length > 0 && (
+        <Section tone="tint">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <Reveal>
+              <p className="text-eyebrow">In the room</p>
+              <h2 className="text-h2 mt-3 text-plum-500">The work, in pictures</h2>
+              <p className="text-lead mt-4 max-w-xl">
+                Coaching sessions, workshops and rooms full of people choosing to
+                grow on purpose.
+              </p>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <Link
+                href="/gallery"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-plum-500 transition-colors hover:text-gold-700"
+              >
+                Open the gallery
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </Reveal>
+          </div>
+
+          <StaggerGroup className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4" stagger={0.08}>
+            {galleryPreview.map((item) => (
+              <StaggerItem key={item.id}>
+                <Link
+                  href="/gallery"
+                  className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-border"
+                >
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.alt_text || item.title}
+                    fill
+                    sizes="(min-width: 1024px) 22vw, 45vw"
+                    className="object-cover transition-transform duration-[900ms] group-hover:scale-110"
+                  />
+                  <span className="absolute inset-0 bg-gradient-to-t from-plum-900/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <span className="absolute inset-x-0 bottom-0 translate-y-2 p-3 text-xs font-semibold uppercase tracking-[0.14em] text-ivory-100 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                    {item.category}
+                  </span>
+                </Link>
+              </StaggerItem>
+            ))}
+          </StaggerGroup>
+        </Section>
+      )}
+
+      {/* Philosophy band */}
       <Section tone="dark">
         <div
           aria-hidden
@@ -292,7 +322,25 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* ── Insights ── */}
+      {/* Rotating testimonials */}
+      <Section tone="muted">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-eyebrow">In their words</p>
+          <h2 className="text-h2 mt-3 text-plum-500">What it is like to work together</h2>
+        </div>
+        <QuoteRotator quotes={featuredRecommendations} className="mt-10" />
+        <div className="mt-8 text-center">
+          <Link
+            href="/references"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-plum-500 transition-colors hover:text-gold-700"
+          >
+            Read all {recommendations.length} recommendations
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+      </Section>
+
+      {/* Insights */}
       <Section>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <Reveal>
@@ -318,26 +366,25 @@ export default async function HomePage() {
           <StaggerGroup className="mt-10 grid gap-6 md:grid-cols-3" stagger={0.1}>
             {articles.map((article) => (
               <StaggerItem key={article.id}>
-                <Link
-                  href={`/insights/${article.slug}`}
-                  className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition-all duration-500 hover:-translate-y-1 hover:border-gold-300 hover:shadow-xl hover:shadow-plum-700/12"
-                >
-                  {article.category && (
-                    <Badge variant="secondary">{article.category.name}</Badge>
-                  )}
-                  <h3 className="mt-4 font-display text-xl font-medium leading-snug text-plum-500">
-                    {article.title}
-                  </h3>
-                  {article.excerpt && (
-                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                      {article.excerpt}
-                    </p>
-                  )}
-                  <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-xs font-semibold uppercase tracking-wider text-gold-700">
-                    Read
-                    <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                  </span>
-                </Link>
+                <SpotlightCard as="article" className="h-full">
+                  <Link href={`/insights/${article.slug}`} className="flex h-full flex-col p-6">
+                    {article.category && (
+                      <Badge variant="secondary">{article.category.name}</Badge>
+                    )}
+                    <h3 className="mt-4 font-display text-xl font-medium leading-snug text-plum-500">
+                      {article.title}
+                    </h3>
+                    {article.excerpt && (
+                      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                        {article.excerpt}
+                      </p>
+                    )}
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-xs font-semibold uppercase tracking-wider text-gold-700">
+                      Read
+                      <ArrowRight className="size-3.5 transition-transform duration-300 group-hover/spot:translate-x-1" />
+                    </span>
+                  </Link>
+                </SpotlightCard>
               </StaggerItem>
             ))}
           </StaggerGroup>
@@ -350,7 +397,7 @@ export default async function HomePage() {
               </p>
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
                 Insights on leadership, customer experience and intentionality
-                will appear here. In the meantime, the two pathways below are
+                will appear here. In the meantime, the two pathways above are
                 where the work happens.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -365,7 +412,7 @@ export default async function HomePage() {
                   href="/about"
                   className="inline-flex items-center gap-2 rounded-md border border-plum-500/35 px-5 py-2.5 text-sm font-semibold text-plum-500 transition hover:border-plum-500 hover:bg-plum-500 hover:text-ivory-200"
                 >
-                  About Adesua
+                  About me
                 </Link>
               </div>
             </div>
@@ -373,7 +420,7 @@ export default async function HomePage() {
         )}
       </Section>
 
-      {/* ── Portrait closer ── */}
+      {/* Portrait closer */}
       <Section tone="tint">
         <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <Reveal direction="left">
@@ -382,13 +429,33 @@ export default async function HomePage() {
                 aria-hidden
                 className="absolute inset-5 -z-10 rounded-full bg-gold-200/60 blur-2xl"
               />
-              <Image
-                src="/brand/portrait-green-dress-seated.jpg"
-                alt={siteConfig.name}
-                width={640}
-                height={800}
-                className="aspect-[4/5] w-full rounded-2xl border border-border object-cover object-top shadow-[0_30px_70px_-40px_rgba(73,40,63,0.5)]"
-              />
+              {/* Gold duotone: the photograph is graded into the brand palette
+                  rather than shown straight, so it reads as art direction. */}
+              <div className="relative overflow-hidden rounded-2xl border border-border shadow-[0_30px_70px_-40px_rgba(73,40,63,0.5)]">
+                <Image
+                  src="/brand/portrait-green-dress-seated.jpg"
+                  alt={siteConfig.name}
+                  width={640}
+                  height={800}
+                  className="aspect-[4/5] w-full object-cover object-top"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-plum-900/35 mix-blend-multiply"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gold-400/30 mix-blend-soft-light"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-plum-900/55 via-transparent to-transparent"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-3 bottom-3 top-3 rounded-xl border border-gold-200/35"
+                />
+              </div>
             </div>
           </Reveal>
           <Reveal direction="right">
@@ -416,6 +483,7 @@ export default async function HomePage() {
                 className="inline-flex items-center gap-2 rounded-md border border-plum-500/35 px-6 py-3 text-sm font-semibold text-plum-500 transition hover:border-plum-500 hover:bg-plum-500 hover:text-ivory-200"
               >
                 Read the full story
+                <ArrowUpRight className="size-4" aria-hidden />
               </Link>
             </div>
           </Reveal>

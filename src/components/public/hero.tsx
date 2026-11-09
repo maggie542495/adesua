@@ -69,15 +69,38 @@ export function Hero({
         className="abf-float pointer-events-none absolute -left-24 top-1/3 -z-10 size-72 rounded-full bg-mauve-200/45 blur-3xl"
       />
 
-      <div className="container-site grid items-center gap-12 pb-16 pt-28 md:pb-24 md:pt-36 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:pb-28 lg:pt-40">
-        {/* ── Copy ── */}
-        <div className="max-w-xl">
-          <motion.p
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            className="text-eyebrow"
-          >
+      {/* ── Full-bleed portrait, large screens ─────────────────────────────
+          The photograph runs to the right edge of the viewport and the
+          headline sets over it, held readable by a scrim in the page colour. */}
+      <motion.div
+        aria-hidden
+        initial={reduceMotion ? false : { opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease }}
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] xl:w-[46%] lg:block"
+      >
+        <Image
+          src={image}
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1280px) 46vw, 42vw"
+          className="object-cover object-top"
+        />
+        {/* blend the left edge back into the page so type can overlap it */}
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+        {/* warm gold grade */}
+        <div className="absolute inset-0 bg-gold-500/15 mix-blend-soft-light" />
+        <div className="absolute inset-0 bg-plum-900/15 mix-blend-multiply" />
+        {/* gold hairline down the bleed edge */}
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-gold-400/50 to-transparent" />
+      </motion.div>
+
+      <div className="container-site relative grid items-center gap-12 pb-16 pt-28 md:pb-24 md:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:pb-32 lg:pt-44 xl:pt-52">
+        {/* ── Copy — overlaps the photograph ── */}
+        <div className="relative z-10 max-w-2xl">
+          <motion.p variants={fade} initial="hidden" animate="show" className="text-eyebrow">
             {eyebrow}
           </motion.p>
 
@@ -85,12 +108,12 @@ export function Hero({
             variants={container}
             initial="hidden"
             animate="show"
-            className="text-display mt-4 text-[clamp(2.75rem,6vw,4.75rem)] text-plum-500"
+            className="text-display mt-4 text-[clamp(3rem,8vw,6.5rem)] leading-[0.94] tracking-[-0.02em] text-plum-500"
           >
             {words.map((wordText, index) => (
               <span
                 key={`${wordText}-${index}`}
-                className="mr-[0.28em] inline-block overflow-hidden pb-[0.08em] align-bottom"
+                className="mr-[0.22em] inline-block overflow-hidden pb-[0.06em] align-bottom"
               >
                 <motion.span variants={word} className="inline-block">
                   {wordText}
@@ -104,7 +127,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 0.55 }}
-            className="mt-6 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-gold-700"
+            className="mt-7 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-gold-700"
           >
             <span aria-hidden className="h-px w-10 bg-gold-500" />
             {subheadline}
@@ -154,12 +177,12 @@ export function Hero({
           </motion.div>
         </div>
 
-        {/* ── Portrait ── */}
+        {/* ── Portrait card, stacked below on small screens ── */}
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.3, ease }}
-          className="relative mx-auto w-full max-w-sm lg:max-w-none"
+          className="relative mx-auto w-full max-w-sm lg:hidden"
         >
           <div
             aria-hidden
@@ -168,11 +191,6 @@ export function Hero({
           <div
             aria-hidden
             className="abf-float absolute -right-5 -top-5 -z-10 size-28 rounded-full border border-gold-400/60"
-          />
-          <div
-            aria-hidden
-            className="abf-float absolute -bottom-6 -left-6 -z-10 size-20 rounded-full bg-plum-500/10"
-            style={{ animationDelay: "3s" }}
           />
 
           <div className="abf-float relative overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-[0_40px_80px_-45px_rgba(73,40,63,0.55)]">
@@ -184,6 +202,7 @@ export function Hero({
               priority
               className="aspect-[4/5] w-full object-cover object-top"
             />
+            <div aria-hidden className="absolute inset-0 bg-gold-500/10 mix-blend-soft-light" />
           </div>
 
           {/* signature chip */}
@@ -197,6 +216,16 @@ export function Hero({
           </motion.div>
         </motion.div>
       </div>
+
+      {/* signature chip, floating over the bleed on large screens */}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.05, duration: 0.7, ease }}
+        className="absolute bottom-10 right-6 hidden rounded-2xl border border-border bg-card px-5 py-3 shadow-xl shadow-plum-900/20 lg:block xl:right-12"
+      >
+        <p className="text-signature text-lg text-gold-600">Lead with Care.</p>
+      </motion.div>
     </section>
   );
 }

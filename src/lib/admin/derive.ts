@@ -69,6 +69,27 @@ export function deriveFields(row: Record<string, unknown> | null): FieldDef[] {
 }
 
 /**
+ * The registry's declared fields, in declared order, plus any column the row
+ * has that the registry forgot about.
+ *
+ * Declared fields win because they carry the choices a select needs and the
+ * read-only flags that keep ids and hashes out of the editor. Appending the
+ * stragglers means a column added to the database tomorrow still shows up
+ * instead of silently disappearing from the editor.
+ */
+export function mergeDeclaredFields(
+  declared: readonly FieldDef[],
+  row: Record<string, unknown> | null,
+): FieldDef[] {
+  if (!row) return [...declared];
+
+  const declaredNames = new Set(declared.map((field) => field.name));
+  const extras = deriveFields(row).filter((field) => !declaredNames.has(field.name));
+
+  return [...declared, ...extras];
+}
+
+/**
  * Fallback for an empty table: there is no row to inspect, so use the registry's
  * suggested columns as plain text inputs.
  */

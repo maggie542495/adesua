@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Adesua Oriaifo">
+  <defs>
+    <radialGradient id="glow" cx="30%" cy="22%" r="72%">
+      <stop offset="0%" stop-color="#d4af78" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#d4af78" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#371d30"/>
+  <rect width="64" height="64" rx="14" fill="url(#glow)"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#d4af78" stroke-opacity="0.55" stroke-width="1.5"/>
+  <text x="32" y="45" text-anchor="middle"
+        font-family="Cormorant Garamond, Georgia, 'Times New Roman', serif"
+        font-size="38" font-weight="500" fill="#e8cdb3">Z</text>
+  <path d="M46 15.5l1.1 2.9 2.9 1.1-2.9 1.1-1.1 2.9-1.1-2.9-2.9-1.1 2.9-1.1z" fill="#dcb896"/>
+</svg>

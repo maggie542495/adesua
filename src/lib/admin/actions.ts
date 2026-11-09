@@ -4,7 +4,42 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/session";
+import { sendOwnerAlert } from "@/lib/email/send";
+import { readingTime } from "@/lib/markdown";
 import type { TableName } from "@/lib/admin/schema";
+
+/** Tables whose writes are worth telling the owner about. */
+const NOTIFY_ON_WRITE = new Set<TableName>([
+  "articles",
+  "gallery_items",
+  "services",
+  "pages",
+  "site_settings",
+  "admin_invitations",
+  "admin_profiles",
+]);
+
+function labelFor(table: TableName): string {
+  return table.replace(/_/g, " ");
+}
+
+/**
+ * Article housekeeping the editor should not have to remember: publishing
+ * stamps `published_at`, and the reading time follows the body.
+ */
+function prepareBody(table: TableName, body: Record<string, unknown>) {
+  if (table !== "articles") return body;
+
+  if (body.status === "published" && !body.published_at) {
+    body.published_at = new Date().toISOString();
+  }
+
+  if (typeof body.body === "string" && body.body.trim()) {
+    body.reading_time_minutes = readingTime(body.body);
+  }
+
+  return body;
+}
 
 export interface SaveState {
   status: "idle" | "saved" | "error";
@@ -50,6 +85,19 @@ function payload(
   for (const field of fields) {
     if (field.readOnly) continue;
     if (field.name === "id") continue;
+
+    /**
+     * A checkbox only submits when it is checked, so an unticked boolean posts
+     * nothing at all — `get()` returned null, `coerce()` turned that into
+     * `undefined`, and the column was skipped. The result was a flag that
+     * could be switched on but never off: `is_featured` stayed true forever.
+     * Reading the whole submission means "absent" correctly means false.
+     */
+    if (field.type === "boolean") {
+      body[field.name] = formData.getAll(field.name).includes("true");
+      continue;
+    }
+
     const value = coerce(formData.get(field.name), field.type);
     if (value !== undefined) body[field.name] = value;
   }
@@ -66,12 +114,22 @@ export async function createRecord(
   await requireAdmin("editor");
   const supabase = await createClient();
 
-  const body = payload(formData, fields.filter((f) => !f.createOnly));
+  const body = prepareBody(table, payload(formData, fields.filter((f) => !f.createOnly)));
   const { error } = await supabase.from(table).insert(body as never);
 
   if (error) return { status: "error", message: error.message };
 
   revalidatePath(listPath);
+  revalidatePath("/", "layout");
+
+  if (NOTIFY_ON_WRITE.has(table)) {
+    await sendOwnerAlert({
+      title: `New ${labelFor(table)} record`,
+      body: `A new record was added to ${labelFor(table)}.`,
+      link: listPath,
+    });
+  }
+
   return { status: "saved", message: "Record created." };
 }
 
@@ -103,7 +161,7 @@ export async function updateRecord(
   await requireAdmin("editor");
   const supabase = await createClient();
 
-  const body = payload(formData, fields.filter((f) => !f.updateOnly));
+  const body = prepareBody(table, payload(formData, fields.filter((f) => !f.updateOnly)));
   const { error } = await supabase
     .from(table)
     .update(body as never)
@@ -113,7 +171,87 @@ export async function updateRecord(
 
   revalidatePath(listPath);
   revalidatePath(`${listPath}/${id}`);
+  revalidatePath("/", "layout");
+
+  if (NOTIFY_ON_WRITE.has(table)) {
+    await sendOwnerAlert({
+      title: `${labelFor(table)} updated`,
+      body: `A record in ${labelFor(table)} was changed.`,
+      link: `${listPath}/${id}`,
+      quiet: true,
+    });
+  }
+
   return { status: "saved", message: "Changes saved." };
+}
+
+/**
+ * Bulk actions from the list view.
+ *
+ * Deletion is administrator-only, matching the single-record Delete button.
+ * Bulk *editing* is deliberately limited to one column at a time: setting a
+ * status across a selection of enquiries is a real workflow, whereas writing
+ * arbitrary columns into many rows at once is how a bulk action becomes an
+ * outage.
+ */
+/** Reads the checked rows out of a list form's submission. */
+function selectedIds(formData: FormData): string[] {
+  return formData
+    .getAll("ids")
+    .map((value) => String(value))
+    .filter(Boolean);
+}
+
+export async function bulkDelete(
+  table: TableName,
+  listPath: string,
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin("administrator");
+  const ids = selectedIds(formData);
+  if (ids.length === 0) redirect(`${listPath}?error=${encodeURIComponent("Nothing was selected.")}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from(table).delete().in("id", ids);
+
+  revalidatePath(listPath);
+  revalidatePath("/", "layout");
+
+  if (error) {
+    redirect(`${listPath}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`${listPath}?deleted=${ids.length}`);
+}
+
+export async function bulkUpdate(
+  table: TableName,
+  column: string,
+  listPath: string,
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin("editor");
+  const ids = selectedIds(formData);
+  const value = String(formData.get("bulkValue") ?? "");
+
+  if (ids.length === 0 || !column) {
+    redirect(`${listPath}?error=${encodeURIComponent("Nothing was selected.")}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from(table)
+    .update({ [column]: value === "" ? null : value } as never)
+    .in("id", ids);
+
+  revalidatePath(listPath);
+  revalidatePath("/", "layout");
+
+  if (error) {
+    redirect(`${listPath}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`${listPath}?updated=${ids.length}`);
 }
 
 export async function deleteRecord(table: TableName, id: string, listPath: string) {

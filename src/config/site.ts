@@ -1,8 +1,8 @@
 export const siteConfig = {
   name: "Adesua Oriaifo",
   tagline: "Transform. Transcend. Become.",
-  role: "Customer Experience & Client Success Leader",
-  disciplines: "Coach · Facilitator · Purpose-Driven",
+  role: "Head, Customer Success · Customer Experience Specialist (CXS™)",
+  disciplines: "Customer Journey · Coaching · Facilitation",
   description:
     "Customer Experience & Client Success Leader, Coach, and Facilitator. Meaningful growth, without losing yourself.",
   philosophy: "A life lived with purpose. An impact made with intention.",
@@ -15,10 +15,44 @@ export const siteConfig = {
   locationLong: "Based in Nigeria, working globally.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://adesua.com",
   ogImage: "/brand/portrait-black-blazer.jpg",
+  phone: "+234 806 640 1688",
+  phoneHref: "+2348066401688",
   links: {
-    email: "adesua.oriaifo@gmail.com",
-    linkedin: "https://www.linkedin.com/in/adesuaoriaifo",
+    email: "contact@adesuaoriaifo.com",
+    linkedin: "https://www.linkedin.com/in/adesua-margaret-oriaifo-423633182",
   },
+  /**
+   * Homepage metrics band.
+   *
+   * Every figure is quoted from Adesua's own professional record (Access Bank
+   * and Sterling Bank roles on her LinkedIn profile) — CSAT 86% and NPS +28 as
+   * at June 2022, 55% faster resolution after the payment-flow redesign, and
+   * "over seven years" in customer experience. Nothing here is estimated.
+   * The band hides itself entirely if the list is empty.
+   */
+  metrics: [
+    {
+      value: "7+",
+      label: "Years in customer experience",
+      detail: "Customer success, corporate banking, quality management",
+    },
+    {
+      value: "86%",
+      label: "Customer satisfaction",
+      detail: "Corporate banking platform, June 2022",
+    },
+    {
+      value: "+28",
+      label: "NPS points",
+      detail: "Loyalty rating, June 2021 to June 2022",
+    },
+    {
+      value: "55%",
+      label: "Faster resolution",
+      detail: "After redesigning the payment flow",
+    },
+  ] as const,
+
   values: [
     {
       title: "Integrity",

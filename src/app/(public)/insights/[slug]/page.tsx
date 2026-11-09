@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-
-// Dynamic article pages should not be statically prerendered
-export const instant = false;
-import { ArrowLeft, ArrowRight, Calendar, Clock } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getPublishedArticles } from "@/repositories/article-repository";
-import { PageHero } from "@/components/public/page-hero";
+import { ArrowLeft, ArrowRight, Calendar, Clock, Share2 } from "lucide-react";
+import { getArticleBySlug, getPublishedArticles } from "@/repositories/article-repository";
 import { Section, SectionHeading } from "@/components/public/section";
+import { Reveal } from "@/components/public/reveal";
 import { Badge } from "@/components/ui/badge";
+import { CTABanner } from "@/components/public/cta-banner";
 import { resolveImageUrl } from "@/lib/media/resolve-image";
+import { readingTime, renderMarkdown } from "@/lib/markdown";
+import { siteConfig } from "@/config/site";
+
+// Article pages read the live database behind the public client.
+export const instant = false;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -24,118 +28,197 @@ function formatDate(date: string | null): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const articles = await getPublishedArticles(100);
-  const article = articles.find((a) => a.slug === slug);
+  const article = await getArticleBySlug(slug);
 
-  if (!article) return { title: "Not Found" };
+  if (!article) return { title: "Not found" };
+
+  const image = resolveImageUrl(article.seo_image_path ?? article.cover_image_path);
+  const description =
+    article.seo_description ?? article.excerpt ?? `An article by ${siteConfig.name}.`;
 
   return {
-    title: article.title,
-    description: article.excerpt || `Article on ${article.category?.name || "various topics"}`,
+    title: article.seo_title ?? article.title,
+    description,
+    alternates: { canonical: `/insights/${article.slug}` },
+    openGraph: {
+      type: "article",
+      title: article.seo_title ?? article.title,
+      description,
+      publishedTime: article.published_at ?? undefined,
+      modifiedTime: article.updated_at,
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.seo_title ?? article.title,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
-  const articles = await getPublishedArticles(100);
-  const article = articles.find((a) => a.slug === slug);
+  const article = await getArticleBySlug(slug);
 
   if (!article) notFound();
 
-  const related = articles
+  const others = await getPublishedArticles(6);
+  const related = others
     .filter(
-      (a) =>
-        a.id !== article.id &&
-        a.category?.slug === article.category?.slug
+      (candidate) =>
+        candidate.id !== article.id &&
+        (!article.category || candidate.category?.slug === article.category.slug),
     )
     .slice(0, 2);
+  const fallbackRelated = others.filter((candidate) => candidate.id !== article.id).slice(0, 2);
+  const suggestions = related.length ? related : fallbackRelated;
+
+  const cover = resolveImageUrl(article.cover_image_path);
+  const minutes = article.reading_time_minutes ?? readingTime(article.body ?? article.excerpt ?? "");
+  const bodyHtml = renderMarkdown(article.body ?? article.excerpt ?? "");
 
   return (
-    <>
-      <PageHero
-        eyebrow={article.category?.name}
-        title={article.title}
-        description={article.excerpt || undefined}
-      />
-
-      <Section>
-        <div className="mx-auto max-w-3xl">
-          <div className="text-sm text-muted-foreground">
-            {article.published_at && (
-              <span className="mr-4 inline-flex items-center gap-1">
-                <Calendar className="size-4" />
-                {formatDate(article.published_at)}
-              </span>
-            )}
-            {article.reading_time_minutes && (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-4" />
-                {article.reading_time_minutes} min read
-              </span>
-            )}
-          </div>
-        </div>
-      </Section>
-
-      <Section>
-        <div className="mx-auto max-w-3xl text-body-editorial space-y-6">
-          <p className="text-lead">{article.excerpt}</p>
-          <p>
-            This article would contain the full body content. For now, this is
-            a placeholder layout.
-          </p>
-        </div>
-      </Section>
-
-      <Section tone="tint">
-        <div className="mx-auto max-w-3xl">
-          <SectionHeading
-            eyebrow="Continue reading"
-            title="Related insights"
-            align="left"
-          />
-          <div className="grid gap-6 md:grid-cols-2">
-            {related.length > 0 ? (
-              related.map((relatedArticle) => (
-                <Link
-                  key={relatedArticle.id}
-                  href={`/insights/${relatedArticle.slug}`}
-                  className="group flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition-all duration-500 hover:-translate-y-1 hover:border-gold-300 hover:shadow-xl hover:shadow-plum-700/12"
-                >
-                  <h3 className="font-display text-xl font-medium leading-snug text-plum-500">
-                    {relatedArticle.title}
-                  </h3>
-                  {relatedArticle.excerpt && (
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {relatedArticle.excerpt}
-                    </p>
-                  )}
-                  <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-semibold text-gold-700">
-                    Read
-                    <ArrowRight className="size-3.5" />
-                  </span>
-                </Link>
-              ))
-            ) : (
-              <p className="text-muted-foreground">
-                No related articles at the moment.
-              </p>
-            )}
-          </div>
-        </div>
-      </Section>
-
-      <Section>
-        <div className="mx-auto max-w-3xl text-center">
+    <article>
+      {/* Masthead */}
+      <header className="relative overflow-hidden border-b border-border bg-ivory-100 pb-14 pt-28 sm:pt-32">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-gold-200/40 blur-3xl"
+        />
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6">
           <Link
             href="/insights"
-            className="inline-flex items-center gap-2 font-semibold text-plum-500 hover:text-gold-700"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gold-700 transition hover:text-plum-600"
           >
-            <ArrowLeft className="size-4" />
-            Back to all insights
+            <ArrowLeft className="size-3.5" aria-hidden />
+            All insights
           </Link>
+
+          {article.category && (
+            <div className="mt-6">
+              <Badge variant="secondary">{article.category.name}</Badge>
+            </div>
+          )}
+
+          <h1 className="mt-4 font-display text-4xl leading-[1.1] text-plum-500 sm:text-5xl">
+            {article.title}
+          </h1>
+
+          {article.excerpt && (
+            <p className="mt-5 text-lg leading-relaxed text-charcoal-700">
+              {article.excerpt}
+            </p>
+          )}
+
+          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="size-3.5" aria-hidden />
+              {formatDate(article.published_at)}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" aria-hidden />
+              {minutes} min read
+            </span>
+            <span>By {siteConfig.name}</span>
+          </div>
+        </div>
+      </header>
+
+      {cover && (
+        <div className="mx-auto -mt-8 max-w-4xl px-4 sm:px-6">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border shadow-[0_30px_70px_-40px_rgba(73,40,63,0.55)]">
+            <Image
+              src={cover}
+              alt={article.title}
+              fill
+              priority
+              sizes="(min-width: 1024px) 60rem, 100vw"
+              className="object-cover"
+            />
+          </div>
+        </div>
+      )}
+
+      <Section>
+        <div className="mx-auto max-w-3xl">
+          <div
+            className="article-body text-[1.0625rem] leading-[1.85] text-charcoal-700"
+            dangerouslySetInnerHTML={{ __html: bodyHtml }}
+          />
+
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+            <p className="text-sm text-muted-foreground">
+              Written by <span className="font-medium text-plum-600">{siteConfig.name}</span>
+            </p>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                article.title,
+              )}&url=${encodeURIComponent(`${siteConfig.url}/insights/${article.slug}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-plum-600 transition hover:border-gold-400 hover:text-gold-700"
+            >
+              <Share2 className="size-3.5" aria-hidden />
+              Share
+            </a>
+          </div>
         </div>
       </Section>
-    </>
+
+      {suggestions.length > 0 && (
+        <Section tone="tint">
+          <div className="mx-auto max-w-4xl">
+            <SectionHeading eyebrow="Continue reading" title="Related insights" align="left" />
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {suggestions.map((suggestion) => (
+                <Reveal key={suggestion.id}>
+                  <Link
+                    href={`/insights/${suggestion.slug}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-500 hover:-translate-y-1 hover:border-gold-300 hover:shadow-xl"
+                  >
+                    {resolveImageUrl(suggestion.cover_image_path) && (
+                      <div className="relative aspect-[16/9] overflow-hidden bg-ivory-200">
+                        <Image
+                          src={resolveImageUrl(suggestion.cover_image_path) as string}
+                          alt=""
+                          fill
+                          sizes="(min-width: 768px) 30rem, 100vw"
+                          className="object-cover transition-transform duration-[900ms] group-hover:scale-[1.04]"
+                        />
+                      </div>
+                    )}
+                    <div className="flex flex-1 flex-col p-6">
+                      {suggestion.category && (
+                        <Badge variant="secondary">{suggestion.category.name}</Badge>
+                      )}
+                      <h3 className="mt-3 font-display text-xl leading-snug text-plum-500">
+                        {suggestion.title}
+                      </h3>
+                      {suggestion.excerpt && (
+                        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                          {suggestion.excerpt}
+                        </p>
+                      )}
+                      <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-xs font-semibold uppercase tracking-wider text-gold-700">
+                        Read
+                        <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      <CTABanner
+        title="Work with me"
+        description="Coaching, facilitation and advisory for people and teams who want growth that lasts."
+        primary={{ label: "Start a conversation", href: "/contact" }}
+        secondary={{ label: "Explore the pathways", href: "/work-with-me" }}
+      />
+    </article>
   );
 }

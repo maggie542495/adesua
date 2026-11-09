@@ -27,9 +27,17 @@ export const metadata: Metadata = {
     template: `%s — ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  // The tab icon comes from `src/app/icon.png` and `src/app/apple-icon.png`.
-  // Next hashes those URLs, which is the only reliable way to beat a browser
-  // that has already cached /favicon.ico forever.
+  // `public/favicon.ico` is the single source of truth for the tab icon.
+  // Browsers cache `/favicon.ico` hard, so the file itself carries the
+  // versioned content; the explicit list stops Next injecting its own.
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: 'any' },
+    ],
+    shortcut: ['/favicon.ico'],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",

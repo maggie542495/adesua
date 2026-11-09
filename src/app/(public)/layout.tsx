@@ -2,6 +2,7 @@ import { Navbar } from "@/components/public/navbar";
 import { Footer } from "@/components/public/footer";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { BackToTop } from "@/components/ui/back-to-top";
+import { ZeeWidget } from "@/components/public/zee-widget";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className="flex-1 pt-16">{children}</main>
       <Footer />
       <BackToTop />
+      <ZeeWidget />
     </div>
   );
 }

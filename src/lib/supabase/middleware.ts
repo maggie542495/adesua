@@ -42,7 +42,27 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = path.startsWith("/admin");
   const isAuthRoute = path.startsWith("/auth");
 
-  if (isAdminRoute && !user) {
+  /**
+   * Never redirect a server action.
+   *
+   * Actions POST to the URL they were dispatched from, and `NextResponse
+   * .redirect` answers a POST with 307 — which replays the whole request,
+   * action id included, at a different path. The action then runs against a
+   * page it was not dispatched from and the browser receives HTML where React
+   * expects an action payload, which surfaces as "An unexpected response was
+   * received from the server."
+   *
+   * This is the sign-in path exactly: a POST to /auth/login that still carries
+   * a session cookie was being bounced to /admin mid-flight, so the visitor was
+   * signed in (a refresh showed the dashboard) but was shown a runtime error
+   * instead of the dashboard.
+   *
+   * Letting POSTs through is safe: `signIn` redirects to /admin itself, and
+   * `requireAdmin` redirects to the login screen from inside the page render.
+   */
+  const isNavigation = request.method === "GET" || request.method === "HEAD";
+
+  if (isNavigation && isAdminRoute && !user) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/auth/login";
     redirect.searchParams.set("next", path);
@@ -50,7 +70,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Signed in and visiting the login screen → straight to the dashboard.
-  if (isAuthRoute && path === "/auth/login" && user) {
+  if (isNavigation && isAuthRoute && path === "/auth/login" && user) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/admin";
     redirect.search = "";
