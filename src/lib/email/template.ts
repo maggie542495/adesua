@@ -112,14 +112,65 @@ function contactLine(size = 11): string {
   return `<div style="font-family:${SANS};font-size:${size}px;line-height:1.95;color:${INK};">${parts.join(dot)}</div>`;
 }
 
+/**
+ * Where the brand files are reachable from a mail client today.
+ *
+ * `adesuaoriaifo.com` is the address the practice actually uses and which the
+ * footer links to; it is not wired to a host yet, so images are fetched from
+ * the deploy that does serve them. Once the domain resolves, email images and
+ * the link can share it.
+ */
+const PUBLIC_BRAND_ORIGIN = "https://adesuaoriaifo.vercel.app";
+const PUBLIC_SITE_ORIGIN = "https://adesuaoriaifo.com";
+
+/**
+ * The origin email images are served from.
+ *
+ * `EMAIL_ASSET_BASE_URL` wins when set, so a deployment can point mail at its
+ * own public domain. Failing that, a configured site URL is used only if it is
+ * a real, non-local origin; anything local or empty falls back to the deployed
+ * brand origin, because a broken image is worse than a hard-coded one.
+ */
+function publicAssetBase(): string {
+  const configured = process.env.EMAIL_ASSET_BASE_URL;
+  if (configured) return configured.replace(/\/$/, "");
+
+  /**
+   * The brand origin is the default rather than `siteConfig.url`. The site URL
+   * points at whatever domain the app is *served* from — localhost in
+   * development, and in production `adesua.com`, which does not resolve today.
+   * Neither is where the brand files actually live, so emphasizing either
+   * leaves the recipient's client showing a broken image.
+   */
+  return PUBLIC_BRAND_ORIGIN;
+}
+
 export function renderEmail({
   preheader,
   title,
   body,
   footnote,
 }: EmailShellOptions): string {
-  const base = siteConfig.url.replace(/\/$/, "");
-  const portrait = `${base}/brand/email-portrait.jpg`;
+  /**
+   * Images are fetched by the recipient's mail client, not by this server, so
+   * they must be absolute and publicly reachable. `NEXT_PUBLIC_SITE_URL` is
+   * routinely `localhost` in development, which renders as a broken image in
+   * every inbox — so a public base is preferred here, and a local one is
+   * replaced by the deployed origin rather than sent out.
+   */
+  /**
+   * All three images come from the deployed public origin, not from
+   * `NEXT_PUBLIC_SITE_URL`. That variable is `localhost` in development and
+   * the configured domain may not resolve yet in production, and either way
+   * the recipient's mail client is the one fetching these — a host it cannot
+   * reach renders as a broken image in every inbox.
+   *
+   * `icon.png` is the head-and-shoulders portrait: at 24% of a 700px card the
+   * full-torso cut-out left the face too small to read, and this crop fills
+   * the cell the way the stationery does.
+   */
+  const base = publicAssetBase();
+  const portrait = `${base}/brand/icon.png`;
   const mark = `${base}/brand/living-life-in-colour.jpg`;
 
   const principles = escapeHtml(siteConfig.principles)
@@ -179,7 +230,20 @@ export function renderEmail({
                         <div style="margin-top:13px;font-family:${SERIF};font-style:italic;font-size:13px;line-height:1.55;color:${PLUM};">${principles}</div>
                       </td>
                       <td class="logo-cell" width="70" align="right" valign="top" style="width:70px;padding:2px 0 0;vertical-align:top;text-align:right;">
-                        <img src="${mark}" width="60" alt="Living Life in Colour" class="mark-img" style="display:block;width:60px;max-width:60px;height:auto;border:0;margin-left:auto;" />
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="right" style="border-collapse:collapse;">
+                          <tr>
+                            <td align="center" valign="middle" style="width:58px;height:58px;padding:0;vertical-align:middle;text-align:center;">
+                              <div style="width:58px;height:58px;background-color:${CREAM};border:1px solid ${RULE};font-family:${SERIF};font-style:italic;font-size:22px;line-height:56px;color:${PLUM};text-align:center;">A</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td height="3" style="height:3px;padding:0;font-size:0;line-height:0;">
+                              <table role="presentation" width="58" cellpadding="0" cellspacing="0" border="0" style="width:58px;height:3px;border-collapse:collapse;"><tr>
+                                ${RULE_COLOURS.map((colour) => `<td width="20%" height="3" style="width:20%;height:3px;background:${colour};background-color:${colour};font-size:0;line-height:0;">&nbsp;</td>`).join("")}
+                              </tr></table>
+                            </td>
+                          </tr>
+                        </table>
                       </td>
                     </tr>
                   </table>
@@ -250,7 +314,7 @@ export function renderEmail({
 
         <p style="margin:14px 0 0;font-family:${SANS};font-size:10px;line-height:1.7;color:${MUTED};text-align:center;">
           Sent by ${escapeHtml(siteConfig.name)} · ${escapeHtml(siteConfig.locationLong)}<br>
-          <a href="${base}" style="color:${MUTED};text-decoration:underline;">${escapeHtml(siteConfig.url.replace(/^https?:\/\//, ""))}</a>
+          <a href="${PUBLIC_SITE_ORIGIN}" style="color:${MUTED};text-decoration:underline;">${escapeHtml(PUBLIC_SITE_ORIGIN.replace(/^https?:\/\//, ""))}</a>
         </p>
 
       </td></tr>

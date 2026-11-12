@@ -8,7 +8,6 @@ import { formatCell, formatDateTime, humanize, looksLikeDate } from "@/lib/admin
 import { bulkDelete, bulkUpdate } from "@/lib/admin/actions";
 import { getAdminSession } from "@/lib/auth/session";
 import { roleAtLeast } from "@/lib/auth/roles";
-import { InviteForm } from "@/components/admin/invite-form";
 import { SelectAllCheckbox } from "@/components/admin/select-all";
 
 export const instant = false;
@@ -149,8 +148,6 @@ export default async function AdminTablePage({ params, searchParams }: PageProps
           )}
         </div>
       </div>
-
-      {def.table === "admin_invitations" && canWrite && <InviteForm />}
 
       {saved && (
         <p className="rounded-lg border border-gold-400/50 bg-gold-500/10 px-4 py-3 text-sm text-gold-800">

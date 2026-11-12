@@ -12,6 +12,7 @@ import {
   sendSignInAlertEmail,
   sendWelcomeEmail,
 } from "@/lib/email/send";
+import { recordAnonymousAudit, recordAudit } from "@/lib/admin/audit";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 
 export interface AuthState {
@@ -55,6 +56,15 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
+    // A failed sign-in is worth recording even though nobody is signed in: a
+    // run of them against one address is the only signal of an attack here.
+    await recordAnonymousAudit({
+      action: "sign_in_failed",
+      resourceType: "auth",
+      email: parsed.data.email,
+      metadata: { reason: "invalid_credentials" },
+    });
+
     // Deliberately vague: never reveal whether the address exists.
     return { status: "error", message: "That email and password do not match." };
   }
@@ -65,6 +75,21 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     await supabase.auth.signOut();
     redirect("/auth/login?denied=1");
   }
+
+  /**
+   * `last_login_at` was declared on the table but never written, so every team
+   * screen said "never signed in". Stamp it here, and let the audit row follow.
+   */
+  await supabase
+    .from("admin_profiles")
+    .update({ last_login_at: new Date().toISOString() })
+    .eq("id", session.user.id);
+
+  await recordAudit(session, {
+    action: "sign_in",
+    resourceType: "auth",
+    resourceId: session.user.id,
+  });
 
   // A sign-in notice is a courtesy, never a gate — a mail outage must not
   // block someone who has already authenticated.
@@ -314,6 +339,13 @@ export async function acceptInvitation(
     .from("admin_invitations")
     .update({ accepted_at: new Date().toISOString() })
     .eq("token_hash", await hashToken(token));
+
+  await recordAnonymousAudit({
+    action: "invite_accepted",
+    resourceType: "admin_invitations",
+    email: invitation.email,
+    metadata: { role: invitation.role, profileId: created.user.id },
+  });
 
   await Promise.allSettled([
     sendWelcomeEmail({

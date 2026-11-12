@@ -6,7 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/session";
 import { sendOwnerAlert } from "@/lib/email/send";
 import { readingTime } from "@/lib/markdown";
+import { changedFields, recordAudit } from "@/lib/admin/audit";
 import type { TableName } from "@/lib/admin/schema";
+
+/** A write that changes publication state is logged as more than an update. */
+function auditActionFor(body: Record<string, unknown>): "create" | "publish" | "unpublish" {
+  if (body.status === "published") return "publish";
+  if (body.status === "unpublished") return "unpublish";
+  return "create";
+}
 
 /** Tables whose writes are worth telling the owner about. */
 const NOTIFY_ON_WRITE = new Set<TableName>([
@@ -111,13 +119,24 @@ export async function createRecord(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  await requireAdmin("editor");
+  const session = await requireAdmin("editor");
   const supabase = await createClient();
 
   const body = prepareBody(table, payload(formData, fields.filter((f) => !f.createOnly)));
-  const { error } = await supabase.from(table).insert(body as never);
+  const { data: created, error } = await supabase
+    .from(table)
+    .insert(body as never)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { status: "error", message: error.message };
+
+  await recordAudit(session, {
+    action: auditActionFor(body),
+    resourceType: table,
+    resourceId: created?.id ? String(created.id) : null,
+    metadata: { title: titleOf(body) },
+  });
 
   revalidatePath(listPath);
   revalidatePath("/", "layout");
@@ -150,6 +169,15 @@ export async function createRecordAndReturn(
   return state;
 }
 
+/** The label a person would recognise a row by, for the log's own column. */
+function titleOf(body: Record<string, unknown>): string | null {
+  for (const key of ["title", "subject", "email", "name", "file_name", "slug", "key"]) {
+    const value = body[key];
+    if (typeof value === "string" && value.trim()) return value.trim().slice(0, 120);
+  }
+  return null;
+}
+
 export async function updateRecord(
   table: TableName,
   id: string,
@@ -158,16 +186,33 @@ export async function updateRecord(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  await requireAdmin("editor");
+  const session = await requireAdmin("editor");
   const supabase = await createClient();
 
   const body = prepareBody(table, payload(formData, fields.filter((f) => !f.updateOnly)));
+
+  // Read the old row first, so the log can say what actually changed.
+  const { data: before } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
+
   const { error } = await supabase
     .from(table)
     .update(body as never)
     .eq("id", id);
 
   if (error) return { status: "error", message: error.message };
+
+  const changes = before ? changedFields(before as Record<string, unknown>, body) : {};
+
+  await recordAudit(session, {
+    action: body.status === "published" ? "publish" : "update",
+    resourceType: table,
+    resourceId: id,
+    metadata: {
+      title: titleOf({ ...(before as Record<string, unknown> | null), ...body }),
+      changed: Object.keys(changes),
+      fields: changes,
+    },
+  });
 
   revalidatePath(listPath);
   revalidatePath(`${listPath}/${id}`);
@@ -207,7 +252,7 @@ export async function bulkDelete(
   listPath: string,
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin("administrator");
+  const session = await requireAdmin("administrator");
   const ids = selectedIds(formData);
   if (ids.length === 0) redirect(`${listPath}?error=${encodeURIComponent("Nothing was selected.")}`);
 
@@ -221,6 +266,12 @@ export async function bulkDelete(
     redirect(`${listPath}?error=${encodeURIComponent(error.message)}`);
   }
 
+  await recordAudit(session, {
+    action: "bulk_delete",
+    resourceType: table,
+    metadata: { count: ids.length, ids: ids.slice(0, 50) },
+  });
+
   redirect(`${listPath}?deleted=${ids.length}`);
 }
 
@@ -230,7 +281,7 @@ export async function bulkUpdate(
   listPath: string,
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin("editor");
+  const session = await requireAdmin("editor");
   const ids = selectedIds(formData);
   const value = String(formData.get("bulkValue") ?? "");
 
@@ -251,15 +302,31 @@ export async function bulkUpdate(
     redirect(`${listPath}?error=${encodeURIComponent(error.message)}`);
   }
 
+  await recordAudit(session, {
+    action: "bulk_update",
+    resourceType: table,
+    metadata: { count: ids.length, column, to: value || null },
+  });
+
   redirect(`${listPath}?updated=${ids.length}`);
 }
 
 export async function deleteRecord(table: TableName, id: string, listPath: string) {
-  await requireAdmin("administrator");
+  const session = await requireAdmin("administrator");
   const supabase = await createClient();
+
+  // The row is gone after a successful delete, so its label is read first.
+  const { data: before } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
 
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) redirect(`${listPath}/${id}?error=${encodeURIComponent(error.message)}`);
+
+  await recordAudit(session, {
+    action: "delete",
+    resourceType: table,
+    resourceId: id,
+    metadata: { title: before ? titleOf(before as Record<string, unknown>) : null },
+  });
 
   revalidatePath(listPath);
   redirect(`${listPath}?deleted=1`);

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Calendar, Clock, Share2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Clock } from "lucide-react";
 import { getArticleBySlug, getPublishedArticles } from "@/repositories/article-repository";
 import { Section, SectionHeading } from "@/components/public/section";
 import { Reveal } from "@/components/public/reveal";
 import { Badge } from "@/components/ui/badge";
 import { CTABanner } from "@/components/public/cta-banner";
+import { ShareMenu } from "@/components/public/share-menu";
 import { resolveImageUrl } from "@/lib/media/resolve-image";
 import { readingTime, renderMarkdown } from "@/lib/markdown";
 import { siteConfig } from "@/config/site";
@@ -126,21 +127,28 @@ export default async function ArticlePage({ params }: Props) {
       </header>
 
       {cover && (
-        <div className="mx-auto -mt-8 max-w-4xl px-4 sm:px-6">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border shadow-[0_30px_70px_-40px_rgba(73,40,63,0.55)]">
-            <Image
-              src={cover}
-              alt={article.title}
-              fill
-              priority
-              sizes="(min-width: 1024px) 60rem, 100vw"
-              className="object-cover"
-            />
-          </div>
+        <div className="relative mx-auto -mt-10 max-w-5xl px-4 sm:px-6">
+          <Reveal>
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-border shadow-[0_40px_90px_-50px_rgba(73,40,63,0.65)] sm:aspect-[16/10]">
+              <Image
+                src={cover}
+                alt={article.title}
+                fill
+                priority
+                sizes="(min-width: 1024px) 64rem, 100vw"
+                className="object-cover object-center transition-transform duration-[1400ms] ease-out group-hover:scale-[1.03]"
+              />
+              {/* The fade lets the article open on top of the photograph. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/70 to-transparent"
+              />
+            </div>
+          </Reveal>
         </div>
       )}
 
-      <Section>
+      <Section className={cover ? "-mt-16 sm:-mt-24" : undefined}>
         <div className="mx-auto max-w-3xl">
           <div
             className="article-body text-[1.0625rem] leading-[1.85] text-charcoal-700"
@@ -151,17 +159,7 @@ export default async function ArticlePage({ params }: Props) {
             <p className="text-sm text-muted-foreground">
               Written by <span className="font-medium text-plum-600">{siteConfig.name}</span>
             </p>
-            <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                article.title,
-              )}&url=${encodeURIComponent(`${siteConfig.url}/insights/${article.slug}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-plum-600 transition hover:border-gold-400 hover:text-gold-700"
-            >
-              <Share2 className="size-3.5" aria-hidden />
-              Share
-            </a>
+            <ShareMenu title={article.title} url={`${siteConfig.url}/insights/${article.slug}`} />
           </div>
         </div>
       </Section>

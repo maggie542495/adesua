@@ -196,11 +196,12 @@ export interface UploadState {
  * Uploads a cover straight to the public `media` bucket and hands back the
  * storage path to save. Nothing is uploaded when the file is the wrong kind or
  * too large, so a bad pick cannot half-publish an article.
+ *
+ * The path — not a public URL — is the stored value. The editor and public
+ * pages resolve it to a URL, so a deployment can change Supabase projects
+ * without rewriting every article row.
  */
-export async function uploadArticleCover(
-  _previous: UploadState,
-  formData: FormData,
-): Promise<UploadState> {
+export async function uploadArticleCover(formData: FormData): Promise<UploadState> {
   await requireAdmin("editor");
 
   const file = formData.get("file");

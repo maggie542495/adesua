@@ -120,6 +120,13 @@ const contentStatus: readonly string[] = [
   "unpublished",
 ];
 
+/**
+ * `gallery_items.status` has a narrower check constraint than articles — it
+ * allows archived, and rejects scheduled and unpublished. Offering the article
+ * list here meant a perfectly ordinary pick could fail on save.
+ */
+const galleryStatus: readonly string[] = ["draft", "published", "archived"];
+
 /** The values the contact form and Zee actually write into `category`. */
 const enquiryCategories: readonly string[] = [
   "coaching",
@@ -350,7 +357,7 @@ export const tableDefs: readonly TableDef[] = [
         type: "select",
         options: galleryCategories,
       },
-      { name: "status", label: "Status", type: "select", options: contentStatus },
+      { name: "status", label: "Status", type: "select", options: galleryStatus },
       { name: "is_featured", label: "Featured", type: "boolean", help: "Featured images lead the public grid." },
       { name: "sort_order", label: "Order", type: "number", help: "Lower numbers appear first." },
     ],
@@ -666,10 +673,23 @@ export const tableDefs: readonly TableDef[] = [
     group: "System",
     icon: ScrollText,
     primary: "action",
-    columns: ["action", "resource_type", "actor_id", "created_at"],
-    searchable: ["action", "resource_type"],
+    // `actor_id` is a uuid nobody can read at a glance; the email is the same
+    // fact in a form a person can use.
+    columns: ["action", "resource_type", "actor_email", "created_at"],
+    searchable: ["action", "resource_type", "actor_email", "resource_id"],
     orderBy: "created_at",
     ascending: false,
+    fields: [
+      { name: "action", label: "Action", type: "text", readOnly: true },
+      { name: "resource_type", label: "Resource", type: "text", readOnly: true },
+      { name: "resource_id", label: "Resource id", type: "text", readOnly: true },
+      { name: "actor_email", label: "Actor", type: "text", readOnly: true },
+      { name: "metadata", label: "Detail", type: "json", readOnly: true, span: 2 },
+      { name: "ip_hash", label: "Origin hash", type: "text", readOnly: true },
+      { name: "created_at", label: "When", type: "datetime", readOnly: true },
+    ],
+    description:
+      "Every privileged change made in the studio, newest first. Written automatically and never editable.",
   },
 ] as const;
 

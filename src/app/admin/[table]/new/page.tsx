@@ -1,5 +1,6 @@
 import { connection } from "next/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { GalleryEditor } from "@/components/admin/gallery-editor";
 import { RecordForm } from "@/components/admin/record-form";
 import { tableDefBySlug } from "@/lib/admin/schema";
 import { listRows } from "@/lib/admin/data";
@@ -24,6 +25,13 @@ export default async function NewRecordPage({ params }: PageProps) {
   await requireAdmin(def.writeRole ?? "editor");
 
   /**
+   * An invitation is a credential, not a row: it needs a token, an expiry and
+   * an email to be worth anything, none of which a generic field list can
+   * produce. The dedicated screen owns that job.
+   */
+  if (def.table === "admin_invitations") redirect("/admin/admin_invitations");
+
+  /**
    * Order of preference for a create form:
    *
    * 1. The registry's declared fields. They carry the things a row cannot tell
@@ -44,6 +52,24 @@ export default async function NewRecordPage({ params }: PageProps) {
       : fallbackFields(def.columns).filter((field) => !field.readOnly);
 
   const listPath = `/admin/${def.table}`;
+
+  /**
+   * A gallery item is a photograph, so it gets the editor built around one:
+   * drop the file in, see it at the size the public grid shows it, save. The
+   * generic form would only offer a text box for the storage path.
+   */
+  if (def.table === "gallery_items") {
+    return (
+      <GalleryEditor
+        action={createRecordAndReturn.bind(null, def.table, fields, listPath)}
+        fields={fields}
+        item={null}
+        title={`New ${def.label.toLowerCase()}`}
+        listPath={listPath}
+        isNew
+      />
+    );
+  }
 
   return (
     <RecordForm

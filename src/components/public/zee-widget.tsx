@@ -245,7 +245,7 @@ export function ZeeWidget() {
         onClick={() => setIsOpen((open) => !open)}
         aria-label={isOpen ? "Close chat with Zee" : "Chat with Zee"}
         aria-expanded={isOpen}
-        className="group fixed bottom-5 right-5 z-[60] flex size-14 items-center justify-center rounded-full border border-gold-400/70 bg-band text-on-band shadow-[0_18px_40px_-14px_rgba(35,17,30,0.8)] transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:bottom-6 sm:right-6"
+        className="group fixed bottom-5 left-5 z-[60] flex size-14 items-center justify-center rounded-full border border-gold-400/70 bg-band text-on-band shadow-[0_18px_40px_-14px_rgba(35,17,30,0.8)] transition-transform duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:bottom-6 sm:left-6"
       >
         <span
           aria-hidden
@@ -266,7 +266,7 @@ export function ZeeWidget() {
         <div
           role="dialog"
           aria-label="Chat with Zee"
-          className="fixed inset-x-3 bottom-24 z-[60] flex max-h-[min(34rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-gold-500/30 bg-card shadow-[0_30px_80px_-30px_rgba(20,8,16,0.85)] sm:inset-x-auto sm:right-6 sm:w-[24rem]"
+          className="fixed inset-x-3 bottom-24 z-[60] flex max-h-[min(34rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-gold-500/30 bg-card shadow-[0_30px_80px_-30px_rgba(20,8,16,0.85)] sm:inset-x-auto sm:left-6 sm:w-[24rem]"
         >
           {/* Header — invariant band colours so it stays deep in both themes */}
           <header className="relative overflow-hidden bg-band-2 px-4 py-3.5 text-on-band">
@@ -278,7 +278,7 @@ export function ZeeWidget() {
                   "radial-gradient(120% 140% at 88% -20%, rgba(212,175,120,0.30), rgba(212,175,120,0) 58%)",
               }}
             />
-            <div className="relative flex items-center justify-between gap-3">
+            <div className="relative flex items-center justify-between gap-3 mb-8">
               <div className="flex min-w-0 items-center gap-3">
                 <ZeeMark size={40} className="ring-1 ring-gold-400/50" />
                 <div className="min-w-0">

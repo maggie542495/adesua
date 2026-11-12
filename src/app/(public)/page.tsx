@@ -364,29 +364,75 @@ export default async function HomePage() {
 
         {articles.length > 0 ? (
           <StaggerGroup className="mt-10 grid gap-6 md:grid-cols-3" stagger={0.1}>
-            {articles.map((article) => (
-              <StaggerItem key={article.id}>
-                <SpotlightCard as="article" className="h-full">
-                  <Link href={`/insights/${article.slug}`} className="flex h-full flex-col p-6">
-                    {article.category && (
-                      <Badge variant="secondary">{article.category.name}</Badge>
-                    )}
-                    <h3 className="mt-4 font-display text-xl font-medium leading-snug text-plum-500">
-                      {article.title}
-                    </h3>
-                    {article.excerpt && (
-                      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                        {article.excerpt}
-                      </p>
-                    )}
-                    <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-xs font-semibold uppercase tracking-wider text-gold-700">
-                      Read
-                      <ArrowRight className="size-3.5 transition-transform duration-300 group-hover/spot:translate-x-1" />
-                    </span>
-                  </Link>
-                </SpotlightCard>
-              </StaggerItem>
-            ))}
+            {articles.map((article) => {
+              const cover = resolveImageUrl(article.cover_image_path);
+              return (
+                <StaggerItem key={article.id}>
+                  <SpotlightCard as="article" className="h-full min-h-[21rem]">
+                    <Link
+                      href={`/insights/${article.slug}`}
+                      className="relative flex h-full flex-col"
+                    >
+                      {/*
+                       * The cover runs the full height of the card so the piece
+                       * is felt before it is read, but it is washed well back —
+                       * desaturated and held at low opacity — and the bottom
+                       * two-thirds is veiled with the card's own paper tone.
+                       * The type therefore sits on clean paper while the
+                       * photograph still registers behind it.
+                       *
+                       * The veil is weighted downward rather than upward on
+                       * purpose: these covers are portraits, framed on the
+                       * face, and a heavy top scrim crops the head off the
+                       * moment the card is short.
+                       */}
+                      {cover ? (
+                        <Image
+                          src={cover}
+                          alt=""
+                          fill
+                          sizes="(min-width: 768px) 33vw, 100vw"
+                          className="object-cover object-top opacity-[0.26] saturate-[0.6] transition-[opacity,transform] duration-[900ms] group-hover/spot:scale-105 group-hover/spot:opacity-[0.34]"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden
+                          className="absolute inset-0 bg-blush-100"
+                        />
+                      )}
+                      {/* A flat paper wash, then a gradient weighted to the
+                          lower half where the type sits. */}
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-card/40"
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-card/75 to-card"
+                      />
+
+                      <div className="relative flex flex-1 flex-col px-6 pb-6 pt-20">
+                        {article.category && (
+                          <Badge variant="secondary">{article.category.name}</Badge>
+                        )}
+                        <h3 className="mt-3 font-display text-xl font-medium leading-snug text-plum-500">
+                          {article.title}
+                        </h3>
+                        {article.excerpt && (
+                          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                            {article.excerpt}
+                          </p>
+                        )}
+                        <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-xs font-semibold uppercase tracking-wider text-gold-700">
+                          Read
+                          <ArrowRight className="size-3.5 transition-transform duration-300 group-hover/spot:translate-x-1" />
+                        </span>
+                      </div>
+                    </Link>
+                  </SpotlightCard>
+                </StaggerItem>
+              );
+            })}
           </StaggerGroup>
         ) : (
           <Reveal delay={0.12}>

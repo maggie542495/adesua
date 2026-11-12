@@ -1,8 +1,9 @@
 import { connection } from "next/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Bot, Lock, MessageCircle, Send, StickyNote } from "lucide-react";
+import { GalleryEditor } from "@/components/admin/gallery-editor";
 import { RecordForm } from "@/components/admin/record-form";
 import { ReplyForm } from "@/components/admin/reply-form";
 import { tableDefBySlug } from "@/lib/admin/schema";
@@ -112,6 +113,10 @@ export default async function EditRecordPage({ params, searchParams }: PageProps
   const def = tableDefBySlug.get(table);
   if (!def) notFound();
 
+  // The invitation screen owns this table end to end; a generic row editor
+  // would let the token be overwritten with plain text.
+  if (def.table === "admin_invitations") redirect("/admin/admin_invitations");
+
   const session = await requireAdmin("editor");
   const { row, error } = await getRow(def, id);
 
@@ -172,6 +177,20 @@ export default async function EditRecordPage({ params, searchParams }: PageProps
 
         <FieldSummary fields={fields} row={row} />
       </div>
+    );
+  }
+
+  if (def.table === "gallery_items") {
+    return (
+      <GalleryEditor
+        action={updateRecord.bind(null, def.table, id, fields, listPath)}
+        deleteAction={canDelete ? deleteRecord.bind(null, def.table, id, listPath) : undefined}
+        fields={fields}
+        item={row}
+        title={title === "—" ? `${def.label} ${id.slice(0, 8)}` : title}
+        listPath={listPath}
+        isNew={false}
+      />
     );
   }
 

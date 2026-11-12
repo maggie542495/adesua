@@ -35,6 +35,7 @@ import type { SaveState } from "@/lib/admin/actions";
 import type { UploadState } from "@/lib/admin/article-actions";
 import { uploadArticleCover } from "@/lib/admin/article-actions";
 import { slugify } from "@/lib/admin/slug";
+import { MarkdownWriteSurface } from "@/components/admin/markdown-write-surface";
 import { readingTime, renderMarkdown } from "@/lib/markdown";
 import { resolveImageUrl } from "@/lib/media/resolve-image";
 import { cn } from "@/lib/utils";
@@ -136,6 +137,7 @@ export function ArticleEditor({
   const [body, setBody] = useState(str(article?.body));
   const [cover, setCover] = useState(str(article?.cover_image_path));
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverNotice, setCoverNotice] = useState<string | null>(null);
   const [seoTitle, setSeoTitle] = useState(str(article?.seo_title));
   const [seoDescription, setSeoDescription] = useState(str(article?.seo_description));
   const [seoImage, setSeoImage] = useState(str(article?.seo_image_path));
@@ -143,6 +145,7 @@ export function ArticleEditor({
   const [featured, setFeatured] = useState(Boolean(article?.is_featured));
 
   const [tab, setTab] = useState<"write" | "preview">("write");
+  const [styledWrite, setStyledWrite] = useState(true);
   const [insert, setInsert] = useState<"image" | "link" | null>(null);
   const [insertUrl, setInsertUrl] = useState("");
   const [insertAlt, setInsertAlt] = useState("");
@@ -154,6 +157,8 @@ export function ArticleEditor({
   const minutes = useMemo(() => readingTime(body), [body]);
   const preview = useMemo(() => renderMarkdown(body), [body]);
   const coverUrl = resolveImageUrl(cover);
+  const coverIsStored =
+    Boolean(cover) && !/^https?:\/\//i.test(cover) && !cover.startsWith("/");
   const publicHref = effectiveSlug ? `/insights/${effectiveSlug}` : null;
 
   function handleTitle(next: string) {
@@ -252,14 +257,16 @@ export function ArticleEditor({
 
   function handleCoverFile(file: File) {
     setCoverError(null);
+    setCoverNotice(null);
     const data = new FormData();
     data.set("file", file);
 
     startUpload(async () => {
-      const result: UploadState = await uploadArticleCover({ ok: false }, data);
+      const result: UploadState = await uploadArticleCover(data);
       if (result.ok && result.path) {
         setCover(result.path);
         if (!seoImage) setSeoImage(result.path);
+        setCoverNotice("Cover uploaded. The article stores the media path; the public URL is resolved automatically.");
       } else {
         setCoverError(result.message ?? "The upload failed.");
       }
@@ -448,7 +455,21 @@ export function ArticleEditor({
                 </button>
               ))}
 
-              <div className="ml-auto flex items-center gap-1 rounded-full bg-card p-0.5">
+              <button
+                type="button"
+                onClick={() => setStyledWrite((value) => !value)}
+                aria-pressed={styledWrite}
+                title={
+                  styledWrite
+                    ? "Show the Markdown markers so you can edit the syntax"
+                    : "Hide the Markdown markers and show the prose"
+                }
+                className="ml-auto rounded-full px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground transition hover:text-plum-600"
+              >
+                {styledWrite ? "Hide syntax" : "Show syntax"}
+              </button>
+
+              <div className="flex items-center gap-1 rounded-full bg-card p-0.5">
                 {(["write", "preview"] as const).map((mode) => (
                   <button
                     key={mode}
@@ -512,19 +533,17 @@ export function ArticleEditor({
               </div>
             )}
 
-            {/* The textarea stays mounted in preview so the toolbar can still
+            {/* The surface stays mounted in preview so the toolbar can still
                 read and move the cursor; only its visibility changes. */}
-            <textarea
+            <MarkdownWriteSurface
               id={BODY_ID}
               name="body"
               value={body}
-              onChange={(event) => setBody(event.target.value)}
+              onChange={setBody}
               rows={22}
+              hidden={tab === "preview"}
+              styled={styledWrite}
               placeholder={"## Open with a thought\n\nThen let it breathe. Blank lines become paragraphs."}
-              className={cn(
-                "w-full resize-y rounded-b-md border border-border bg-card px-4 py-4 font-mono text-[0.9rem] leading-[1.75] text-charcoal-700 shadow-sm outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500",
-                tab === "preview" && "hidden",
-              )}
             />
 
             {tab === "preview" && (
@@ -729,7 +748,11 @@ export function ArticleEditor({
               {cover && (
                 <button
                   type="button"
-                  onClick={() => setCover("")}
+                  onClick={() => {
+                    setCover("");
+                    setCoverNotice(null);
+                    setCoverError(null);
+                  }}
                   className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:text-destructive"
                 >
                   Remove
@@ -739,10 +762,26 @@ export function ArticleEditor({
 
             <input
               value={cover}
-              onChange={(event) => setCover(event.target.value)}
+              onChange={(event) => {
+                setCover(event.target.value);
+                setCoverNotice(null);
+                setCoverError(null);
+              }}
               placeholder="…or paste a path or URL"
               className={inputClass}
             />
+
+            <p className="mt-1 text-[0.7rem] leading-relaxed text-muted-foreground">
+              {coverIsStored
+                ? "Saved as a media storage path. The public URL is resolved automatically, so do not paste one here."
+                : "Paste an image URL, or a path inside the media bucket."}
+            </p>
+
+            {coverNotice && (
+              <p role="status" className="mt-1 text-xs text-plum-600">
+                {coverNotice}
+              </p>
+            )}
 
             {coverError && (
               <p role="alert" className="mt-1 text-xs text-destructive">

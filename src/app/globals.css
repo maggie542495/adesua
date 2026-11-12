@@ -698,3 +698,46 @@ body {
   border-radius: 0.75rem;
   border: 1px solid var(--border);
 }
+
+/* Tables scroll inside the article column rather than widening the page. */
+.article-body .article-table {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  -webkit-overflow-scrolling: touch;
+}
+
+.article-body .article-table table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.article-body .article-table th,
+.article-body .article-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.article-body .article-table thead th {
+  background: var(--ivory-300);
+  color: var(--plum-600);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.article-body .article-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.article-body .article-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--ivory-300) 45%, transparent);
+}

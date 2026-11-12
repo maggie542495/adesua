@@ -353,7 +353,7 @@ The studio performs a real SMTP connection check rather than trusting environmen
 
 ### Markdown
 
-Article bodies are rendered by a deliberately small renderer in [`src/lib/markdown.ts`](src/lib/markdown.ts). It supports headings, emphasis, links, images, lists, quotes, rules, inline code and fenced code, and escapes everything else. Raw HTML never passes through, so article bodies cannot inject markup.
+Article bodies are rendered by a deliberately small renderer in [`src/lib/markdown.ts`](src/lib/markdown.ts). It supports headings, emphasis, links, images, lists, quotes, tables, rules, inline code and fenced code, and escapes everything else. Raw HTML never passes through, so article bodies cannot inject markup. Tables scroll horizontally inside the article column on narrow screens.
 
 ---
 
