@@ -1,4 +1,6 @@
 import { siteConfig } from "@/config/site";
+import { getContactDetails } from "@/lib/site/contact";
+import type { ContactDetails } from "@/lib/site/contact-shared";
 
 /**
  * One branded shell for every email the practice sends — auth, enquiries,
@@ -100,12 +102,12 @@ function sentences(value: string): string {
 }
 
 /** A single flowing contact line — wraps instead of cramping into a column. */
-function contactLine(size = 11): string {
+function contactLine(contact: ContactDetails, size = 11): string {
   const dot = `<span style="color:${RULE};">&nbsp;&nbsp;·&nbsp;&nbsp;</span>`;
   const parts = [
-    `✉&nbsp; <a href="mailto:${escapeHtml(siteConfig.links.email)}" style="color:${INK};text-decoration:none;">${escapeHtml(siteConfig.links.email)}</a>`,
-    `<b style="color:${PLUM};">in</b>&nbsp; <a href="${escapeHtml(siteConfig.links.linkedin)}" style="color:${INK};text-decoration:none;">LinkedIn</a>`,
-    `📍&nbsp; ${escapeHtml(siteConfig.location)}`,
+    `✉&nbsp; <a href="mailto:${escapeHtml(contact.email)}" style="color:${INK};text-decoration:none;">${escapeHtml(contact.email)}</a>`,
+    `<b style="color:${PLUM};">in</b>&nbsp; <a href="${escapeHtml(contact.linkedin)}" style="color:${INK};text-decoration:none;">LinkedIn</a>`,
+    `📍&nbsp; ${escapeHtml(contact.location)}`,
     `<b style="color:${PLUM};">❤️</b>&nbsp; ${escapeHtml(siteConfig.signature)}`,
   ];
 
@@ -131,7 +133,7 @@ const PUBLIC_SITE_ORIGIN = "https://adesuaoriaifo.com";
  * a real, non-local origin; anything local or empty falls back to the deployed
  * brand origin, because a broken image is worse than a hard-coded one.
  */
-function publicAssetBase(): string {
+export function publicAssetBase(): string {
   const configured = process.env.EMAIL_ASSET_BASE_URL;
   if (configured) return configured.replace(/\/$/, "");
 
@@ -145,12 +147,12 @@ function publicAssetBase(): string {
   return PUBLIC_BRAND_ORIGIN;
 }
 
-export function renderEmail({
+export async function renderEmail({
   preheader,
   title,
   body,
   footnote,
-}: EmailShellOptions): string {
+}: EmailShellOptions): Promise<string> {
   /**
    * Images are fetched by the recipient's mail client, not by this server, so
    * they must be absolute and publicly reachable. `NEXT_PUBLIC_SITE_URL` is
@@ -171,7 +173,9 @@ export function renderEmail({
    */
   const base = publicAssetBase();
   const portrait = `${base}/brand/icon.png`;
-  const mark = `${base}/brand/living-life-in-colour.jpg`;
+  /* Contact details come from the dashboard, so a changed phone or email
+     reaches every email the practice sends — not only the website. */
+  const contact = await getContactDetails();
 
   const principles = escapeHtml(siteConfig.principles)
     .split("|")
@@ -248,7 +252,7 @@ export function renderEmail({
                     </tr>
                   </table>
                   <div style="margin-top:16px;padding-top:13px;border-top:1px solid ${RULE};">
-                    ${contactLine(11)}
+                    ${contactLine(contact)}
                   </div>
                 </td>
               </tr>
@@ -277,21 +281,18 @@ export function renderEmail({
           <tr><td style="padding:0;background:${CREAM_SOFT};">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;border-collapse:collapse;background:${CREAM_SOFT};">
               <tr>
-                <td class="stack" width="46%" valign="middle" style="width:46%;padding:22px 14px 16px 24px;vertical-align:middle;">
+                <td class="stack" width="58%" valign="middle" style="width:58%;padding:22px 14px 16px 24px;vertical-align:middle;">
                   <div class="footmark" style="font-family:${SERIF};font-style:italic;font-size:26px;line-height:1.12;color:${PLUM};">${escapeHtml(siteConfig.name)}</div>
                   <div style="margin-top:9px;font-family:${SANS};font-size:9px;line-height:1.9;letter-spacing:1.1px;color:${DEEP};font-weight:bold;">${ROLE_LINES}</div>
                 </td>
-                <td class="stack" width="18%" valign="middle" align="center" style="width:18%;padding:16px 8px;vertical-align:middle;text-align:center;">
-                  <img src="${mark}" width="74" alt="Living Life in Colour" style="display:block;width:74px;max-width:74px;height:auto;border:0;margin:0 auto;" />
-                </td>
-                <td class="stack stack-rule" width="36%" valign="middle" align="center" style="width:36%;padding:16px 20px;border-left:1px solid ${RULE};vertical-align:middle;text-align:center;">
+ <td class="stack stack-rule" width="42%" valign="middle" align="center" style="width:42%;padding:16px 20px;border-left:1px solid ${RULE};vertical-align:middle;text-align:center;">
                   <div style="font-family:${SERIF};font-style:italic;font-size:15px;line-height:1.45;color:${PLUM};">${sentences(siteConfig.outlook)}</div>
                 </td>
               </tr>
               <tr>
-                <td colspan="3" style="padding:0 24px 20px;">
+                <td colspan="2" style="padding:0 24px 20px;">
                   <div style="padding-top:14px;border-top:1px solid ${RULE};">
-                    ${contactLine(11)}
+                    ${contactLine(contact)}
                   </div>
                 </td>
               </tr>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Mail, MapPin } from "lucide-react";
 import { Linkedin } from "@/components/ui/brand-icons";
 import { siteConfig } from "@/config/site";
+import { getContactDetails } from "@/lib/site/contact";
 
 const explore = [
   { href: "/work-with-me", label: "Work with me" },
@@ -18,8 +19,9 @@ const pathways = [
   { href: "/insights", label: "Latest insights" },
 ] as const;
 
-export function Footer() {
+export async function Footer() {
   const year = "2026";
+  const contact = await getContactDetails();
 
   return (
     <footer className="relative overflow-hidden border-t border-border bg-gradient-to-b from-band via-band-2 to-band-3 text-on-band">
@@ -57,14 +59,14 @@ export function Footer() {
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
-              href={`mailto:${siteConfig.links.email}`}
+              href={`mailto:${contact.email}`}
               className="inline-flex items-center gap-2 rounded-full border border-on-band/25 px-4 py-2 text-xs font-medium text-on-band transition hover:border-gold-300 hover:text-gold-300"
             >
               <Mail className="size-4" aria-hidden />
-              {siteConfig.links.email}
+              {contact.email}
             </a>
             <a
-              href={siteConfig.links.linkedin}
+              href={contact.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex size-10 items-center justify-center rounded-full border border-on-band/25 text-on-band transition hover:border-gold-300 hover:text-gold-300"
@@ -74,7 +76,7 @@ export function Footer() {
             </a>
             <span className="inline-flex items-center gap-1.5 text-xs text-on-band/70">
               <MapPin className="size-4" aria-hidden />
-              {siteConfig.location}
+              {contact.location}
             </span>
           </div>
         </div>

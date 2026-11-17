@@ -97,7 +97,7 @@ export function Hero({
         <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-gold-400/50 to-transparent" />
       </motion.div>
 
-      <div className="container-site relative grid items-center gap-12 pb-16 pt-28 md:pb-24 md:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:pb-32 lg:pt-44 xl:pt-52">
+      <div className="container-site relative grid items-center gap-12 pb-14 pt-24 md:pb-20 md:pt-28 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:pb-24 lg:pt-32 xl:pt-36">
         {/* ── Copy — overlaps the photograph ── */}
         <div className="relative z-10 max-w-2xl">
           <motion.p variants={fade} initial="hidden" animate="show" className="text-eyebrow">
@@ -108,7 +108,7 @@ export function Hero({
             variants={container}
             initial="hidden"
             animate="show"
-            className="text-display mt-4 text-[clamp(3rem,8vw,6.5rem)] leading-[0.94] tracking-[-0.02em] text-plum-500"
+            className="text-display mt-4 text-[clamp(2.6rem,5.6vw,4.75rem)] leading-[0.96] tracking-[-0.02em] text-plum-500"
           >
             {words.map((wordText, index) => (
               <span
@@ -127,7 +127,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 0.55 }}
-            className="mt-7 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-gold-700"
+            className="mt-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-gold-700"
           >
             <span aria-hidden className="h-px w-10 bg-gold-500" />
             {subheadline}
@@ -138,7 +138,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 0.68 }}
-            className="mt-5 max-w-lg text-lg leading-relaxed text-charcoal-700 md:text-xl"
+            className="mt-4 max-w-lg text-lg leading-relaxed text-charcoal-700 md:text-xl"
           >
             {body}
           </motion.p>
@@ -148,7 +148,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 0.82 }}
-            className="mt-9 flex flex-wrap items-center gap-3"
+            className="mt-8 flex flex-wrap items-center gap-3"
           >
             <Magnetic>
               <Button asChild size="lg" className="abf-shine h-12 px-8">
@@ -168,7 +168,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 1 }}
-            className="mt-14 hidden items-center gap-3 text-caption md:flex"
+            className="mt-10 hidden items-center gap-3 text-caption md:flex"
           >
             <span className="flex size-9 items-center justify-center rounded-full border border-plum-500/25 text-plum-500">
               <ArrowDown className="abf-bob size-4" aria-hidden />

@@ -8,11 +8,11 @@ import {
 } from "@/lib/email/template";
 
 /** Dev-only: renders the email shell for a visual check. */
-export default function EmailPreview() {
+export default async function EmailPreview() {
   if (process.env.NODE_ENV === "production") notFound();
 
 
-  const html = renderEmail({
+  const html = await renderEmail({
     preheader: "New enquiry",
     title: "Adaeze would like to talk",
     body: `

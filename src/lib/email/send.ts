@@ -343,7 +343,7 @@ export async function sendEnquiryEmail(enquiry: EnquiryPayload): Promise<MailRes
     ]
       .filter(Boolean)
       .join("\n"),
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "New enquiry",
       title: `${enquiry.name} would like to talk`,
       body,
@@ -384,7 +384,7 @@ export async function sendAutoReply(input: {
     to: input.email,
     subject: "Thank you for reaching out",
     text: `Dear ${firstName},\n\n${message}\n\nWarmly,\nAdesua`,
-    html: renderEmail({
+    html: await renderEmail({
       preheader: input.outsideHours ? "Out of hours — noted" : "Message received",
       title: "Your note reached the studio",
       body,
@@ -405,7 +405,7 @@ export async function sendVisitorReply(input: {
   subject: string;
   body: string;
 }): Promise<MailResult> {
-  const html = renderEmail({
+  const html = await renderEmail({
     preheader: "A reply from Adesua",
     title: input.subject,
     body: `${paragraphs(input.body)}
@@ -466,7 +466,7 @@ export async function sendOwnerAlert(input: {
       to: owners.map((owner) => owner.email).join(","),
       subject: input.title,
       text: `${input.body}\n\n${link}`,
-      html: renderEmail({
+      html: await renderEmail({
         preheader: "Studio notification",
         title: input.title,
         body: `${paragraphs(input.body)}${button(link, "Open the studio")}`,
@@ -517,7 +517,7 @@ export async function sendInvitationEmail(input: {
       `Accept here: ${input.acceptUrl}`,
       `This link expires on ${input.expiresAt}.`,
     ].join("\n"),
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "Studio invitation",
       title: "An invitation to the studio",
       body,
@@ -584,7 +584,7 @@ export async function sendWelcomeEmail(input: {
       "",
       "If you did not create this account, reply to this message immediately.",
     ].join("\n"),
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "Your account is ready",
       title: input.isOwner ? "The studio is yours" : "Welcome to the studio",
       body,
@@ -604,7 +604,7 @@ export async function sendInvitationAcceptedEmail(input: {
     to: ownerAddress(),
     subject: `${input.name} accepted an invitation`,
     text: `${input.name} (${input.email}) accepted an invitation as ${input.role}.`,
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "New team member",
       title: "An invitation was accepted",
       body: `${detailRows([
@@ -641,7 +641,7 @@ export async function sendPasswordChangedEmail(input: {
       "If this was you, nothing further is needed.",
       "If it was not, reply to this message immediately and sign out of all devices from Admin → Security.",
     ].join("\n"),
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "Your password was changed",
       title: "Your password was changed",
       body: `
@@ -694,7 +694,7 @@ export async function sendSignInAlertEmail(input: {
     ]
       .filter(Boolean)
       .join("\n"),
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "New sign-in",
       title: "A new sign-in to the studio",
       body: `
@@ -734,7 +734,7 @@ export async function sendTestEmail(to: string): Promise<MailResult> {
     to,
     subject: `Test email from the ${siteConfig.name} studio`,
     text: `This is a test message. If you can read it, SMTP is working.\n\nSent ${sentAt} (WAT).`,
-    html: renderEmail({
+    html: await renderEmail({
       preheader: "SMTP check",
       title: "Your email is working",
       body: `

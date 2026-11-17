@@ -6,6 +6,7 @@ import { sendAutoReply, sendEnquiryEmail, sendOwnerAlert } from "@/lib/email/sen
 import { createAdminClient } from "@/lib/supabase/admin";
 import { draftEmailReply } from "@/lib/zee/assistant";
 import { siteConfig } from "@/config/site";
+import { getContactDetails } from "@/lib/site/contact";
 
 export interface EnquiryState {
   status: "idle" | "success" | "error";
@@ -57,6 +58,7 @@ export async function submitEnquiry(
   _previous: EnquiryState,
   formData: FormData,
 ): Promise<EnquiryState> {
+  const contact = await getContactDetails();
   const raw = {
     name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -190,7 +192,7 @@ export async function submitEnquiry(
 
   return {
     status: "error",
-    message: `I could not deliver that just now. Please write to ${siteConfig.links.email} directly — nothing is lost.`,
+    message: `I could not deliver that just now. Please write to ${contact.email} directly — nothing is lost.`,
     values,
   };
 }

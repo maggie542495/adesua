@@ -1,6 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { siteConfig } from "@/config/site";
+import { getContactDetails } from "@/lib/site/contact";
+import type { ContactDetails } from "@/lib/site/contact-shared";
 import { sendAutoReply, sendOwnerAlert } from "@/lib/email/send";
 
 export interface ZeeTurn {
@@ -52,7 +54,7 @@ LINKEDIN: ${siteConfig.links.linkedin}
 LANGUAGES: English (native or bilingual), French (elementary).
 
 SUMMARY
-Over seven years in Customer Success, Corporate Banking and Total Quality Management. Designs and implements customer journey frameworks, improves customer experience and drives process improvement. Works across functions to align delivery with the brand promise, lifting satisfaction, loyalty and retention.
+Over ten years in Customer Success, Corporate Banking and Total Quality Management. Designs and implements customer journey frameworks, improves customer experience and drives process improvement. Works across functions to align delivery with the brand promise, lifting satisfaction, loyalty and retention.
 
 EXPERIENCE
 1. Sterling Bank — Head, Customer Success (July 2023 to present)
@@ -104,7 +106,7 @@ Strategy implementation · presentations · key metrics · customer journey mapp
  * Everything Zee is allowed to know. Kept in one place so the assistant
  * never contradicts the site: update here when the practice changes.
  */
-const KNOWLEDGE = `
+const KNOWLEDGE = (contact: ContactDetails) => `
 IDENTITY
 Name: ${siteConfig.name}. Based in ${siteConfig.location}, working globally.
 Roles: Customer Experience & Client Success Leader; professional coach; workshop facilitator; advisory consultant; writer.
@@ -113,7 +115,7 @@ Philosophy: ${siteConfig.philosophy}
 Signature: ${siteConfig.signature}
 Promise: ${siteConfig.promise}
 Principles: ${siteConfig.principles}
-Contact: ${siteConfig.links.email} · ${siteConfig.phone} · ${siteConfig.links.linkedin}
+Contact: ${contact.email} · ${contact.phone} · ${contact.linkedin}
 She normally replies within one working day.
 
 PROFESSIONAL RECORD
@@ -145,7 +147,8 @@ export interface ZeeVisitor {
   email: string | null;
 }
 
-function systemPrompt(visitor: ZeeVisitor): string {
+async function systemPrompt(visitor: ZeeVisitor): Promise<string> {
+  const contact = await getContactDetails();
   const now = new Date();
   const hour = now.getHours();
   const working = now.getDay() >= 1 && now.getDay() <= 5 && hour >= 9 && hour < 17;
@@ -187,7 +190,7 @@ Phrase it like a person would, for example: "Before I go further — what should
 
   return `You are Zee, the assistant for ${siteConfig.name}'s practice website.
 
-${KNOWLEDGE}
+${KNOWLEDGE(contact)}
 
 VISITOR
 ${visitorSection}
@@ -420,7 +423,7 @@ async function askModel(
     { role: "user" as const, parts: [{ text: message }] },
   ];
 
-  return askGemini(systemPrompt(visitor), contents);
+  return askGemini(await systemPrompt(visitor), contents);
 }
 
 /* ── What we can learn from a turn ─────────────────────────────────── */
@@ -613,7 +616,7 @@ export async function draftEmailReply(input: EmailDraftInput): Promise<EmailDraf
 
   const instruction = `You are Zee, writing email on behalf of ${siteConfig.name}.
 
-${KNOWLEDGE}
+${KNOWLEDGE(await getContactDetails())}
 
 TASK
 Draft the body of a ${kind === "reply" ? "considered reply" : "short acknowledgement"} from Adesua to ${firstName}${
@@ -681,9 +684,10 @@ export async function replyAsZee({
     reply = text;
   } catch (error) {
     console.error("[zee] model unavailable", error);
+const contact = await getContactDetails();
     reply = capturedEmail
-      ? `Thank you — I've noted ${capturedEmail} and passed your message to Adesua. She replies personally within one working day. If it is urgent, you can also reach her on ${siteConfig.phone}.`
-      : `I'm having trouble reaching the studio right now, but your message is noted. Leave your email here and Adesua will reply within one working day, or write to ${siteConfig.links.email} directly.`;
+      ? `Thank you — I've noted ${capturedEmail} and passed your message to Adesua. She replies personally within one working day. If it is urgent, you can also reach her on ${contact.phone}.`
+      : `I'm having trouble reaching the studio right now, but your message is noted. Leave your email here and Adesua will reply within one working day, or write to ${contact.email} directly.`;
   }
 
   await logTurn(conversation.conversationId, "assistant", reply);

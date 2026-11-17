@@ -26,13 +26,13 @@ export const siteConfig = {
    *
    * Every figure is quoted from Adesua's own professional record (Access Bank
    * and Sterling Bank roles on her LinkedIn profile) — CSAT 86% and NPS +28 as
-   * at June 2022, 55% faster resolution after the payment-flow redesign, and
-   * "over seven years" in customer experience. Nothing here is estimated.
+   * at June 2022, a 70% lift in app sign-ups after the onboarding redesign, and
+   * "over ten years" in customer experience. Nothing here is estimated.
    * The band hides itself entirely if the list is empty.
    */
   metrics: [
     {
-      value: "7+",
+      value: "10+",
       label: "Years in customer experience",
       detail: "Customer success, corporate banking, quality management",
     },
@@ -47,9 +47,9 @@ export const siteConfig = {
       detail: "Loyalty rating, June 2021 to June 2022",
     },
     {
-      value: "55%",
-      label: "Faster resolution",
-      detail: "After redesigning the payment flow",
+      value: "70%",
+      label: "More app sign-ups",
+      detail: "After redesigning customer onboarding",
     },
   ] as const,
 

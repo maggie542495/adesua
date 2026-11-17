@@ -267,7 +267,7 @@ export default async function AboutPage() {
     paragraphsFrom(introSection?.body).length > 0
       ? paragraphsFrom(introSection?.body)
       : [
-          "I am a customer experience and customer success leader with over seven years across customer success, corporate banking and total quality management. I design and implement customer journey frameworks, strengthen the experience customers actually have, and drive the process improvements behind it.",
+          "I am a customer experience and customer success leader with over ten years across customer success, corporate banking and total quality management. I design and implement customer journey frameworks, strengthen the experience customers actually have, and drive the process improvements behind it.",
           "I work across functions so that what a brand promises and what a customer feels stay aligned — improving satisfaction, loyalty and retention, and coaching the teams who deliver it every day.",
           siteConfig.promise,
         ];
@@ -490,7 +490,7 @@ export default async function AboutPage() {
           <div className="max-w-2xl">
             <p className="text-eyebrow">Experience</p>
             <h2 className="text-h2 mt-2 text-plum-500">
-              Seven years of customer experience, in the work itself
+              Ten years of customer experience, in the work itself
             </h2>
             <p className="text-lead mt-4">
               From frontline support to leading customer success — the roles, the
@@ -510,7 +510,7 @@ export default async function AboutPage() {
               The sectors behind the practice
             </h2>
             <p className="text-lead mt-4">
-              Seven years of customer experience across banking, operations and
+              Ten years of customer experience across banking, operations and
               frontline service — the same problems wearing different uniforms.
             </p>
           </div>

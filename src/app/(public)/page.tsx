@@ -121,7 +121,7 @@ export default async function HomePage() {
       ...pathways.professionalImpact,
       href: "/work-with-me#professional-impact",
       eyebrow: "Pathway two",
-      image: "/brand/portrait-black-blazer.jpg",
+      image: "/brand/portrait-close-smile.jpg",
       topics: topicList(pathways.professionalImpact.summary),
     },
   ];

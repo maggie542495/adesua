@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -182,6 +182,23 @@ export async function markAllNotificationsRead() {
 
 /* ── Site settings ─────────────────────────────────────────────────── */
 
+/**
+ * Settings the public site reads. Writing one of these must leave it public,
+ * or the footer and contact page would fall back to the built-in values.
+ */
+const PUBLIC_SETTING_KEYS = new Set([
+  "contact_email",
+  "contact_phone",
+  "contact_location",
+  "social_linkedin",
+  "social_instagram",
+  "social_twitter",
+  "business_hours",
+  "response_time",
+  "booking_url",
+  "site_announcement",
+]);
+
 export async function saveSiteSettings(
   _previous: StudioState,
   formData: FormData,
@@ -211,6 +228,7 @@ export async function saveSiteSettings(
       {
         key: settingKey,
         value: parsed as never,
+        ...(PUBLIC_SETTING_KEYS.has(settingKey) ? { is_public: true } : {}),
         updated_by: session.user.id,
         updated_at: new Date().toISOString(),
       },
@@ -224,6 +242,7 @@ export async function saveSiteSettings(
 
   revalidatePath("/admin/settings");
   revalidatePath("/", "layout");
+  updateTag("site_settings:public");
   return { status: "success", message: "Settings saved." };
 }
 

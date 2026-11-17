@@ -16,6 +16,7 @@ import { Reveal } from "@/components/public/reveal";
 import { Button } from "@/components/ui/button";
 import { Linkedin as LinkedinIcon } from "@/components/ui/brand-icons";
 import { siteConfig } from "@/config/site";
+import { useContact } from "@/components/public/contact-provider";
 import { submitEnquiry, type EnquiryState } from "./actions";
 
 const inputClass =
@@ -24,6 +25,7 @@ const inputClass =
 const initialState: EnquiryState = { status: "idle" };
 
 export default function ContactPage() {
+  const contact = useContact();
   const [state, formAction, isPending] = useActionState<EnquiryState, FormData>(
     submitEnquiry,
     initialState,
@@ -60,7 +62,7 @@ export default function ContactPage() {
               <ul className="space-y-4">
                 <li>
                   <a
-                    href={`mailto:${siteConfig.links.email}`}
+                    href={`mailto:${contact.email}`}
                     className="group flex items-start gap-4 rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-md"
                   >
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blush-300 text-plum-500">
@@ -69,7 +71,7 @@ export default function ContactPage() {
                     <span className="min-w-0">
                       <span className="block font-semibold text-plum-600">Email</span>
                       <span className="block break-all text-sm text-charcoal-700">
-                        {siteConfig.links.email}
+                        {contact.email}
                       </span>
                       <span className="mt-1 block text-xs text-muted-foreground">
                         Typically answered within one working day.
@@ -80,7 +82,7 @@ export default function ContactPage() {
 
                 <li>
                   <a
-                    href={`tel:${siteConfig.phoneHref}`}
+                    href={`tel:${contact.phoneHref}`}
                     className="group flex items-start gap-4 rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-md"
                   >
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blush-300 text-plum-500">
@@ -89,7 +91,7 @@ export default function ContactPage() {
                     <span className="min-w-0">
                       <span className="block font-semibold text-plum-600">Phone</span>
                       <span className="block text-sm text-charcoal-700">
-                        {siteConfig.phone}
+                        {contact.phone}
                       </span>
                       <span className="mt-1 block text-xs text-muted-foreground">
                         Calls by appointment, Mon–Fri, 9:00–17:00.
@@ -105,7 +107,7 @@ export default function ContactPage() {
                   <span>
                     <span className="block font-semibold text-plum-600">Studio</span>
                     <span className="block text-sm text-charcoal-700">
-                      {siteConfig.locationLong}
+                      {contact.location}
                     </span>
                   </span>
                 </li>
@@ -128,7 +130,7 @@ export default function ContactPage() {
               </ul>
 
               <a
-                href={siteConfig.links.linkedin}
+                href={contact.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-plum-600 transition hover:text-gold-700"

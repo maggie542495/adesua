@@ -11,6 +11,7 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/public/theme-toggle";
+import { useContact } from "@/components/public/contact-provider";
 
 const nav = [
   { href: "/work-with-me", label: "Work with me" },
@@ -21,6 +22,7 @@ const nav = [
 ] as const;
 
 export function Navbar() {
+  const contact = useContact();
   const pathname = usePathname();
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -211,14 +213,14 @@ export function Navbar() {
                   </span>
                   <div className="flex items-center gap-2">
                     <a
-                      href={`mailto:${siteConfig.links.email}`}
+                      href={`mailto:${contact.email}`}
                       aria-label="Email Adesua"
                       className="flex size-9 items-center justify-center rounded-full border border-gold-500/40 text-gold-700 transition hover:bg-gold-500/15"
                     >
                       <Mail className="size-4" />
                     </a>
                     <a
-                      href={siteConfig.links.linkedin}
+                      href={contact.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Adesua on LinkedIn"

@@ -17,6 +17,7 @@ import {
   MessagesSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Palette,
   Settings,
   ShieldCheck,
   Users,
@@ -35,6 +36,7 @@ interface NavLink {
 
 const workspace: NavLink[] = [
   { href: "/admin/email-studio", label: "Email Studio", icon: Mail },
+  { href: "/admin/email-stationery", label: "Email stationery", icon: Palette },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/settings", label: "Site settings", icon: Settings },
   { href: "/admin/security", label: "Security & 2FA", icon: ShieldCheck },

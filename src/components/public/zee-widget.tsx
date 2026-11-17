@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Loader2, Sparkles } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { useContact } from "@/components/public/contact-provider";
 
 interface Message {
   id: string;
@@ -95,6 +96,7 @@ function ZeeMark({ size = 40, className = "" }: { size?: number; className?: str
 }
 
 export function ZeeWidget() {
+  const contact = useContact();
   const [isOpen, setIsOpen] = useState(false);
   // The cached thread is the initial value, so a returning visitor sees their
   // conversation on the first paint rather than after a round trip.
@@ -218,7 +220,7 @@ export function ZeeWidget() {
           role: "assistant",
           content:
             data.reply ??
-            `I couldn't reach the studio just now. You can write to Adesua directly at ${siteConfig.links.email} — she answers within one working day.`,
+            `I couldn't reach the studio just now. You can write to Adesua directly at ${contact.email} — she answers within one working day.`,
           timestamp: new Date(),
         },
       ]);
@@ -228,7 +230,7 @@ export function ZeeWidget() {
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: `I'm having trouble connecting. Please write to Adesua directly at ${siteConfig.links.email}.`,
+          content: `I'm having trouble connecting. Please write to Adesua directly at ${contact.email}.`,
           timestamp: new Date(),
         },
       ]);

@@ -48,7 +48,7 @@ export function InteractivePathways({ panels }: { panels: PathwayPanel[] }) {
               fill
               sizes="(min-width: 1024px) 50vw, 100vw"
               className={cn(
-                "object-cover object-center transition-all duration-[1200ms]",
+                "object-cover object-top transition-all duration-[1200ms]",
                 isActive ? "scale-105 opacity-100" : "scale-100 opacity-80 grayscale-[35%]",
               )}
             />
