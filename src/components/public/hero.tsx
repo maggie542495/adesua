@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Magnetic } from "@/components/public/magnetic";
+import { useContact } from "@/components/public/contact-provider";
 
 export interface HeroAction {
   label: string;
@@ -40,6 +41,7 @@ export function Hero({
   imageAlt,
 }: HeroProps) {
   const reduceMotion = useReducedMotion();
+  const contact = useContact();
   const words = splitWords(headline);
 
   const container = {
@@ -58,48 +60,16 @@ export function Hero({
   };
 
   return (
-    <section className="relative -mt-16 overflow-hidden border-b border-border">
+    <section className="relative overflow-hidden border-b border-border">
       {/* ambient wash */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_15%_0%,rgba(242,230,233,0.9),transparent_65%),radial-gradient(ellipse_50%_45%_at_95%_20%,rgba(237,218,202,0.75),transparent_60%)]"
-      />
-      <div
-        aria-hidden
-        className="abf-float pointer-events-none absolute -left-24 top-1/3 -z-10 size-72 rounded-full bg-mauve-200/45 blur-3xl"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_45%_at_12%_0%,rgba(242,230,233,0.75),transparent_65%),radial-gradient(ellipse_45%_40%_at_92%_15%,rgba(237,218,202,0.6),transparent_60%)]"
       />
 
-      {/* ── Full-bleed portrait, large screens ─────────────────────────────
-          The photograph runs to the right edge of the viewport and the
-          headline sets over it, held readable by a scrim in the page colour. */}
-      <motion.div
-        aria-hidden
-        initial={reduceMotion ? false : { opacity: 0, scale: 1.04 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.2, ease }}
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] xl:w-[46%] lg:block"
-      >
-        <Image
-          src={image}
-          alt=""
-          fill
-          priority
-          sizes="(min-width: 1280px) 46vw, 42vw"
-          className="object-cover object-top"
-        />
-        {/* blend the left edge back into the page so type can overlap it */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-        {/* warm gold grade */}
-        <div className="absolute inset-0 bg-gold-500/15 mix-blend-soft-light" />
-        <div className="absolute inset-0 bg-plum-900/15 mix-blend-multiply" />
-        {/* gold hairline down the bleed edge */}
-        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-gold-400/50 to-transparent" />
-      </motion.div>
-
-      <div className="container-site relative grid items-center gap-12 pb-14 pt-24 md:pb-20 md:pt-28 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:pb-24 lg:pt-32 xl:pt-36">
-        {/* ── Copy — overlaps the photograph ── */}
-        <div className="relative z-10 max-w-2xl">
+      {/* Same rhythm as the About hero: copy left, portrait card right. */}
+      <div className="container-site relative grid items-center gap-10 py-16 md:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+        <div className="relative z-10 max-w-xl">
           <motion.p variants={fade} initial="hidden" animate="show" className="text-eyebrow">
             {eyebrow}
           </motion.p>
@@ -108,7 +78,7 @@ export function Hero({
             variants={container}
             initial="hidden"
             animate="show"
-            className="text-display mt-4 text-[clamp(2.6rem,5.6vw,4.75rem)] leading-[0.96] tracking-[-0.02em] text-plum-500"
+            className="text-h1 mt-3 text-plum-500"
           >
             {words.map((wordText, index) => (
               <span
@@ -129,7 +99,7 @@ export function Hero({
             transition={{ delay: 0.55 }}
             className="mt-5 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.16em] text-gold-700"
           >
-            <span aria-hidden className="h-px w-10 bg-gold-500" />
+            <span aria-hidden className="h-px w-10 shrink-0 bg-gold-500" />
             {subheadline}
           </motion.p>
 
@@ -138,7 +108,7 @@ export function Hero({
             initial="hidden"
             animate="show"
             transition={{ delay: 0.68 }}
-            className="mt-4 max-w-lg text-lg leading-relaxed text-charcoal-700 md:text-xl"
+            className="text-lead mt-4 max-w-lg whitespace-pre-line"
           >
             {body}
           </motion.p>
@@ -163,69 +133,52 @@ export function Hero({
             </Button>
           </motion.div>
 
-          <motion.div
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            transition={{ delay: 1 }}
-            className="mt-10 hidden items-center gap-3 text-caption md:flex"
-          >
-            <span className="flex size-9 items-center justify-center rounded-full border border-plum-500/25 text-plum-500">
-              <ArrowDown className="abf-bob size-4" aria-hidden />
-            </span>
-            Scroll to explore
-          </motion.div>
+          {contact.location && (
+            <motion.p
+              variants={fade}
+              initial="hidden"
+              animate="show"
+              transition={{ delay: 0.95 }}
+              className="mt-6 flex items-center gap-2 text-caption"
+            >
+              <MapPin className="size-4 text-gold-600" aria-hidden />
+              {contact.location}
+            </motion.p>
+          )}
         </div>
 
-        {/* ── Portrait card, stacked below on small screens ── */}
+        {/* Portrait card — inset, rounded, blush halo behind it, as on About. */}
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.3, ease }}
-          className="relative mx-auto w-full max-w-sm lg:hidden"
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.25, ease }}
+          className="relative mx-auto w-full max-w-md lg:max-w-none"
         >
-          <div
-            aria-hidden
-            className="absolute inset-x-6 bottom-4 top-10 -z-10 rounded-[2.5rem] bg-gradient-to-br from-blush-300 via-ivory-100 to-gold-100"
-          />
-          <div
-            aria-hidden
-            className="abf-float absolute -right-5 -top-5 -z-10 size-28 rounded-full border border-gold-400/60"
-          />
+          <div aria-hidden className="absolute inset-6 -z-10 rounded-full bg-blush-300/70" />
 
-          <div className="abf-float relative overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-[0_40px_80px_-45px_rgba(73,40,63,0.55)]">
+          <div className="relative overflow-hidden rounded-2xl shadow-[0_24px_60px_-30px_rgba(73,40,63,0.45)]">
             <Image
               src={image}
               alt={imageAlt}
               width={720}
               height={900}
               priority
+              sizes="(min-width: 1024px) 45vw, 100vw"
               className="aspect-[4/5] w-full object-cover object-top"
             />
             <div aria-hidden className="absolute inset-0 bg-gold-500/10 mix-blend-soft-light" />
           </div>
 
-          {/* signature chip */}
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.7, ease }}
-            className="absolute -bottom-5 left-4 rounded-2xl border border-border bg-card px-5 py-3 shadow-xl shadow-plum-900/10 sm:left-8"
+            transition={{ delay: 1.05, duration: 0.7, ease }}
+            className="absolute -bottom-5 left-4 rounded-2xl border border-border bg-card px-5 py-3 shadow-xl shadow-plum-900/10 sm:left-6"
           >
             <p className="text-signature text-lg text-gold-600">Lead with Care.</p>
           </motion.div>
         </motion.div>
       </div>
-
-      {/* signature chip, floating over the bleed on large screens */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.05, duration: 0.7, ease }}
-        className="absolute bottom-10 right-6 hidden rounded-2xl border border-border bg-card px-5 py-3 shadow-xl shadow-plum-900/20 lg:block xl:right-12"
-      >
-        <p className="text-signature text-lg text-gold-600">Lead with Care.</p>
-      </motion.div>
     </section>
   );
 }

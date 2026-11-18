@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const DEFAULT_IMAGE = "/brand/cutout-headshot.png";
+const DEFAULT_IMAGE = "/brand/portrait-patterned-top.jpg";
 
 const marqueeItems = [
   "Better People",
